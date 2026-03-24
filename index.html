@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leitura Diária de Manuseio da Roçadeira - SPG Oásis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Bibliotecas para Exportação -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Biblioteca para Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .header-bg {
+            background: linear-gradient(135deg, #054a36 0%, #033023 100%);
+            border-bottom: 4px solid #02261c;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: rgba(255, 255, 255, 0.15);
+            margin: 10px 0;
+        }
+
+        .input-group-icon {
+            position: relative;
+        }
+        .input-group-icon i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        .input-group-icon input, .input-group-icon select {
+            padding-left: 42px !important;
+            transition: all 0.2s;
+        }
+
+        .input-group-icon input:focus, .input-group-icon select:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+        }
+
+        .logo-header {
+            width: 100px;
+            height: 100px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+        }
+
+        /* Estilos de Status Ultra Destacados */
+        .status-badge {
+            font-size: 11px;
+            font-weight: 900;
+            padding: 8px 16px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card-operacional { border-left: 10px solid #10b981; background: #ffffff; }
+        .card-manutencao { border-left: 10px solid #f59e0b; background: #ffffff; }
+        .card-ajuste { border-left: 10px solid #ef4444; background: #ffffff; }
+
+        .badge-operacional { background: #10b981; color: #ffffff; }
+        .badge-manutencao { background: #f59e0b; color: #ffffff; }
+        .badge-ajuste { background: #ef4444; color: #ffffff; }
+
+        #exportArea {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            width: 800px;
+            background: #f8fafc;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-16">
+
+    <!-- Header Principal -->
+    <header class="header-bg text-white shadow-2xl mb-8">
+        <div class="max-w-[1400px] mx-auto px-6 py-6">
+            <div class="flex justify-between items-center">
+                <div class="flex-grow">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-tractor text-emerald-400 text-2xl"></i>
+                        <h1 class="text-xl md:text-2xl font-black tracking-tight uppercase">Leitura Diária de Manuseio</h1>
+                    </div>
+                    <h2 class="text-lg font-medium text-emerald-100/80">SPG Oásis</h2>
+                    <div class="divider"></div>
+                    <div class="flex items-center space-x-4 text-sm text-emerald-50/90 font-bold">
+                        <span><i class="fas fa-calendar-day mr-2 opacity-70"></i><span id="headerDateDisplay">Data: --/--/----</span></span>
+                        <span class="opacity-30">|</span>
+                        <span><i class="fas fa-layer-group mr-2 opacity-70"></i><span id="headerWeekDisplay">Semana --</span></span>
+                    </div>
+                </div>
+                <div class="ml-6">
+                    <img src="https://i.imgur.com/rB1Lk8y.png" alt="Logo" class="logo-header object-contain">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-[1400px] mx-auto px-4 md:px-8">
+        <!-- Botões de Ação -->
+        <div class="flex flex-wrap gap-3 mb-8 justify-end">
+            <button onclick="exportarExcel()" class="bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3 px-5 rounded-2xl shadow-md border border-emerald-100 flex items-center space-x-2 transition-all text-xs uppercase tracking-wider">
+                <i class="fas fa-file-excel text-lg text-green-600"></i>
+                <span>Planilha Excel</span>
+            </button>
+            <button onclick="exportar('jpg')" class="bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3 px-5 rounded-2xl shadow-md border border-emerald-100 flex items-center space-x-2 transition-all text-xs uppercase tracking-wider">
+                <i class="fab fa-whatsapp text-lg text-green-500"></i>
+                <span>Enviar WhatsApp</span>
+            </button>
+            <button onclick="exportar('pdf')" class="bg-slate-900 hover:bg-black text-white font-black py-3 px-5 rounded-2xl shadow-md flex items-center space-x-2 transition-all text-xs uppercase tracking-wider">
+                <i class="fas fa-file-pdf text-lg text-red-400"></i>
+                <span>Baixar PDF</span>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <!-- Formulário -->
+            <div class="lg:col-span-4">
+                <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-2xl sticky top-6">
+                    <h2 class="text-xl font-black text-slate-800 mb-8 flex items-center uppercase tracking-tighter">
+                        <i class="fas fa-plus-circle text-emerald-500 mr-3 text-2xl"></i>
+                        Novo Registro
+                    </h2>
+                    
+                    <form id="rocadeiraForm" class="space-y-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Data da Operação</label>
+                                <div class="input-group-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <input type="date" id="data" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Operador</label>
+                                    <div class="input-group-icon">
+                                        <i class="fas fa-user-tie"></i>
+                                        <input type="text" id="operador" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700 placeholder:font-normal" placeholder="Nome">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Equipamento</label>
+                                    <div class="input-group-icon">
+                                        <i class="fas fa-cog"></i>
+                                        <select id="equipamento" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
+                                            <option value="Roçadeira 01">Roçadeira 01</option>
+                                            <option value="Roçadeira 02">Roçadeira 02</option>
+                                            <option value="Roçadeira 03">Roçadeira 03</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Localização (Bloco)</label>
+                                <div class="input-group-icon">
+                                    <i class="fas fa-map-marked-alt"></i>
+                                    <select id="bloco" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
+                                        <script>
+                                            for(let i=1; i<=15; i++) {
+                                                document.write(`<option value="Bloco ${String(i).padStart(2, '0')}">Bloco ${String(i).padStart(2, '0')}</option>`);
+                                            }
+                                        </script>
+                                        <option value="Área Geral">Área Geral</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Hora Início</label>
+                                    <div class="input-group-icon">
+                                        <i class="fas fa-play-circle"></i>
+                                        <input type="time" id="horaInicio" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Hora Fim</label>
+                                    <div class="input-group-icon">
+                                        <i class="fas fa-stop-circle"></i>
+                                        <input type="time" id="horaFim" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 border-2 border-dashed border-slate-200 p-4 rounded-2xl flex justify-between items-center">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-hourglass-half text-emerald-500"></i>
+                                    <span class="text-[10px] font-black text-slate-500 uppercase">Tempo de Operação</span>
+                                </div>
+                                <span id="displayTempoTotal" class="text-xl font-black text-slate-800">00:00h</span>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Status do Equipamento</label>
+                                <div class="input-group-icon">
+                                    <i class="fas fa-check-shield"></i>
+                                    <select id="status" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
+                                        <option value="Operacional">Operacional (OK)</option>
+                                        <option value="Manutenção Necessária">Manutenção Necessária</option>
+                                        <option value="Ajuste de Lâmina">Ajuste de Lâmina</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black py-5 rounded-[1.5rem] shadow-xl active:scale-95 transition-all uppercase text-sm tracking-widest flex items-center justify-center space-x-3">
+                            <i class="fas fa-save"></i>
+                            <span>Registrar Leitura</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Listagem -->
+            <div class="lg:col-span-8">
+                <div class="flex items-center justify-between mb-6 px-2">
+                    <h3 class="font-black text-slate-400 uppercase text-xs tracking-[0.2em]">Histórico de Atividades</h3>
+                    <div class="bg-slate-200 h-px flex-grow mx-4"></div>
+                    <span id="totalBadge" class="bg-slate-800 text-white text-[10px] font-black px-3 py-1 rounded-full">0</span>
+                </div>
+                
+                <div id="cardsGrid" class="grid grid-cols-1 gap-6"></div>
+                
+                <div id="emptyState" class="flex flex-col items-center justify-center py-32 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
+                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-clipboard-list text-slate-300 text-3xl"></i>
+                    </div>
+                    <p class="text-slate-400 font-black uppercase text-[10px] tracking-widest">Aguardando registros de manuseio</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ÁREA DE EXPORTAÇÃO (Invisível no site) -->
+    <div id="exportArea">
+        <div class="header-bg p-8 text-white flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black uppercase tracking-tight">Leitura de Manuseio Roçadeira</h1>
+                <h2 class="text-xl font-medium opacity-80">SPG Oásis</h2>
+                <div class="w-32 h-1 bg-emerald-400 my-4 rounded-full"></div>
+                <p id="exportMeta" class="text-sm font-bold opacity-90 tracking-wide">Data: --/--/---- • Semana --</p>
+            </div>
+            <img src="https://i.imgur.com/rB1Lk8y.png" style="width: 100px; height: 100px;">
+        </div>
+        
+        <div class="p-10 bg-slate-50">
+            <div class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm mb-10 text-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-emerald-500"></div>
+                <span class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Total de Operações no Período</span>
+                <span id="exportCount" class="text-6xl font-black text-slate-900 tracking-tighter">0</span>
+            </div>
+
+            <div id="exportList" class="grid grid-cols-1 gap-6"></div>
+            
+            <div class="mt-16 pt-10 border-t border-slate-200 text-center">
+                <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">SPG • CONTROLE INTEGRADO • OÁSIS</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dataInput = document.getElementById('data');
+        const hInicio = document.getElementById('horaInicio');
+        const hFim = document.getElementById('horaFim');
+        const displayTempo = document.getElementById('displayTempoTotal');
+        const cardsGrid = document.getElementById('cardsGrid');
+        const exportList = document.getElementById('exportList');
+        const emptyState = document.getElementById('emptyState');
+        let registros = [];
+
+        function getWeek(d) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+            return Math.ceil((((d - new Date(Date.UTC(d.getUTCFullYear(), 0, 1))) / 86400000) + 1) / 7);
+        }
+
+        function calcularTempo() {
+            const start = hInicio.value;
+            const end = hFim.value;
+            if (!start || !end) {
+                displayTempo.innerText = "00:00h";
+                return "00:00";
+            }
+            const s = start.split(':');
+            const e = end.split(':');
+            let minS = (parseInt(s[0]) * 60) + parseInt(s[1]);
+            let minE = (parseInt(e[0]) * 60) + parseInt(e[1]);
+            if (minE < minS) minE += 1440; 
+            const diff = minE - minS;
+            const horas = Math.floor(diff / 60);
+            const minutos = diff % 60;
+            const res = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
+            displayTempo.innerText = res + "h";
+            return res;
+        }
+
+        [hInicio, hFim].forEach(i => i.addEventListener('change', calcularTempo));
+
+        dataInput.addEventListener('change', (e) => {
+            if(!e.target.value) return;
+            const d = new Date(e.target.value + 'T00:00:00');
+            const s = getWeek(d);
+            const dataBr = e.target.value.split('-').reverse().join('/');
+            document.getElementById('headerDateDisplay').innerText = `Data: ${dataBr}`;
+            document.getElementById('headerWeekDisplay').innerText = `Semana ${s}`;
+            document.getElementById('exportMeta').innerText = `Data: ${dataBr} • Semana ${s}`;
+        });
+
+        document.getElementById('rocadeiraForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const tempoCalculado = calcularTempo();
+            const statusVal = document.getElementById('status').value;
+            
+            let statusClass = "card-operacional";
+            let badgeClass = "badge-operacional";
+            let statusIcon = "fa-check-circle";
+
+            if(statusVal.includes("Manutenção")) {
+                statusClass = "card-manutencao";
+                badgeClass = "badge-manutencao";
+                statusIcon = "fa-exclamation-triangle";
+            } else if(statusVal.includes("Ajuste")) {
+                statusClass = "card-ajuste";
+                badgeClass = "badge-ajuste";
+                statusIcon = "fa-tools";
+            }
+
+            const reg = {
+                id: Date.now(),
+                data: dataInput.value.split('-').reverse().join('/'),
+                operador: document.getElementById('operador').value.toUpperCase(),
+                bloco: document.getElementById('bloco').value.toUpperCase(),
+                equip: document.getElementById('equipamento').value,
+                inicio: hInicio.value,
+                fim: hFim.value,
+                duracao: tempoCalculado,
+                status: statusVal.toUpperCase(),
+                statusClass,
+                badgeClass,
+                statusIcon
+            };
+            
+            registros.unshift(reg);
+            render();
+            e.target.reset();
+            displayTempo.innerText = "00:00h";
+            initDate();
+        });
+
+        function render() {
+            emptyState.classList.toggle('hidden', registros.length > 0);
+            document.getElementById('totalBadge').innerText = registros.length;
+            
+            const html = registros.map(r => `
+                <div class="${r.statusClass} p-8 rounded-[2rem] shadow-lg relative border border-slate-100 transition-all hover:shadow-xl">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-calendar-alt text-slate-300 text-xs"></i>
+                                <span class="text-[10px] font-black text-slate-400 tracking-tighter">${r.data}</span>
+                            </div>
+                            <h3 class="text-base md:text-xl font-black text-slate-900 tracking-tight uppercase leading-none">
+                                ${r.bloco} • <span class="text-emerald-700">${r.operador}</span>
+                            </h3>
+                        </div>
+                        <span class="status-badge ${r.badgeClass} whitespace-nowrap">
+                            ${r.status}
+                        </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
+                            <div>
+                                <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Equipamento</span>
+                                <span class="text-sm font-black text-slate-800">${r.equip}</span>
+                            </div>
+                            <i class="fas fa-tools text-slate-200 text-xl"></i>
+                        </div>
+                        <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                            <div>
+                                <span class="block text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Duração Total</span>
+                                <span class="text-lg font-black text-emerald-900">${r.duracao}h</span>
+                            </div>
+                            <i class="fas fa-stopwatch text-emerald-200 text-xl"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-slate-400">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-clock text-[10px]"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-wider">Janela: ${r.inicio} ÀS ${r.fim}</span>
+                        </div>
+                        <i class="fas fa-info-circle text-xs opacity-20"></i>
+                    </div>
+                </div>
+            `).join('');
+            
+            cardsGrid.innerHTML = html;
+            exportList.innerHTML = html;
+            document.getElementById('exportCount').innerText = registros.length;
+        }
+
+        // Função de Exportação Excel
+        function exportarExcel() {
+            if (registros.length === 0) return;
+            
+            // Mapeia os dados para o formato de planilha
+            const dadosExcel = registros.map(r => ({
+                'DATA': r.data,
+                'OPERADOR': r.operador,
+                'LOCALIZAÇÃO': r.bloco,
+                'EQUIPAMENTO': r.equip,
+                'HORA INÍCIO': r.inicio,
+                'HORA FIM': r.fim,
+                'DURAÇÃO (H)': r.duracao,
+                'STATUS EQUIPAMENTO': r.status
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dadosExcel);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Leituras Diárias");
+
+            // Gerar arquivo e baixar
+            XLSX.writeFile(wb, `leitura-rocadeira-${Date.now()}.xlsx`);
+        }
+
+        async function exportar(tipo) {
+            if(registros.length === 0) return;
+            const area = document.getElementById('exportArea');
+            const canvas = await html2canvas(area, { scale: 2, useCORS: true, backgroundColor: '#f8fafc' });
+
+            if (tipo === 'jpg') {
+                const link = document.createElement('a');
+                link.download = `relatorio-rocadeira-${Date.now()}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+            } else {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgData = canvas.toDataURL('image/png');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`relatorio-rocadeira.pdf`);
+            }
+        }
+
+        function initDate() {
+            const today = new Date().toISOString().split('T')[0];
+            dataInput.value = today;
+            dataInput.dispatchEvent(new Event('change'));
+        }
+
+        initDate();
+    </script>
+</body>
+</html>
