@@ -17,7 +17,7 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+            background-color: #f0f4f8;
         }
 
         .header-bg {
@@ -47,42 +47,66 @@
             transition: all 0.2s;
         }
 
-        .input-group-icon input:focus, .input-group-icon select:focus {
-            border-color: #10b981;
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
-        }
-
         .logo-header {
             width: 100px;
             height: 100px;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
         }
 
-        .status-badge {
-            font-size: 11px;
-            font-weight: 900;
-            padding: 8px 16px;
-            border-radius: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        /* Estilos de Card */
+        /* Estilos de Card (Flash Cards Coloridos) */
         .card-base {
-            border-radius: 2rem;
+            border-radius: 1.5rem;
             background: #ffffff;
-            border: 1px solid #f1f5f9;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
-        .card-operacional { border-left: 10px solid #10b981; }
-        .card-manutencao { border-left: 10px solid #f59e0b; }
-        .card-ajuste { border-left: 10px solid #ef4444; }
+        
+        .card-operacional { border-left: 6px solid #10b981; }
+        .card-manutencao { border-left: 6px solid #f59e0b; }
+        .card-ajuste { border-left: 6px solid #ef4444; }
 
-        .badge-operacional { background: #10b981; color: #ffffff; }
-        .badge-manutencao { background: #f59e0b; color: #ffffff; }
-        .badge-ajuste { background: #ef4444; color: #ffffff; }
+        .status-badge {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+        }
 
-        /* Área de Exportação Oculta */
+        .badge-operacional { background: #d1fae5; color: #065f46; }
+        .badge-manutencao { background: #fef3c7; color: #92400e; }
+        .badge-ajuste { background: #fee2e2; color: #991b1b; }
+
+        .data-field {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 12px;
+            gap: 12px;
+            min-height: 54px;
+        }
+
+        .field-bloco { background: #eff6ff; border: 1px solid #dbeafe; color: #1e40af; }
+        .field-equip { background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; }
+        .field-tempo { background: #f5f3ff; border: 1px solid #ede9fe; color: #5b21b6; }
+        .field-total { background: #065f46; color: #ffffff; }
+
+        .field-label {
+            display: block;
+            font-size: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+            opacity: 0.7;
+            letter-spacing: 0.05em;
+        }
+
+        .field-value {
+            display: block;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
         #exportArea {
             position: absolute;
             left: -9999px;
@@ -94,24 +118,23 @@
         .action-btn {
             transition: all 0.2s;
             cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
         }
-        .action-btn:hover {
-            transform: scale(1.15);
-        }
+        .action-btn:hover { background-color: #f1f5f9; }
     </style>
 </head>
 <body class="min-h-screen pb-16">
 
-    <!-- Header Principal -->
     <header class="header-bg text-white shadow-2xl mb-8">
         <div class="max-w-[1400px] mx-auto px-6 py-6">
             <div class="flex justify-between items-center">
                 <div class="flex-grow">
                     <div class="flex items-center space-x-3">
                         <i class="fas fa-tractor text-emerald-400 text-2xl"></i>
-                        <h1 class="text-xl md:text-2xl font-black tracking-tight uppercase">Leitura Diária de Manuseio</h1>
+                        <h1 class="text-xl md:text-2xl font-black tracking-tight uppercase">Leitura de Roçadeiras</h1>
                     </div>
-                    <h2 class="text-lg font-medium text-emerald-100/80">SPG Oásis</h2>
+                    <h2 class="text-lg font-medium text-emerald-100/80">Oásis • Sistema de Gestão</h2>
                     <div class="divider"></div>
                     <div class="flex items-center space-x-4 text-sm text-emerald-50/90 font-bold">
                         <span><i class="fas fa-calendar-day mr-2 opacity-70"></i><span id="headerDateDisplay">Data: --/--/----</span></span>
@@ -129,62 +152,61 @@
     <div class="max-w-[1400px] mx-auto px-4 md:px-8">
         <!-- Botões de Ação -->
         <div class="flex flex-wrap gap-3 mb-8 justify-end">
-            <button onclick="exportarExcel()" class="bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3 px-5 rounded-2xl shadow-md border border-emerald-100 flex items-center space-x-2 transition-all text-xs uppercase tracking-wider">
-                <i class="fas fa-file-excel text-lg text-green-600"></i>
-                <span>Planilha Excel</span>
+            <button onclick="exportarExcel()" class="bg-white hover:bg-emerald-50 text-emerald-700 font-bold py-3 px-5 rounded-xl shadow-sm border border-emerald-100 flex items-center space-x-2 transition-all text-xs uppercase">
+                <i class="fas fa-file-excel text-green-600"></i>
+                <span>Planilha</span>
             </button>
-            <button onclick="exportar('jpg')" class="bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3 px-5 rounded-2xl shadow-md border border-emerald-100 flex items-center space-x-2 transition-all text-xs uppercase tracking-wider">
-                <i class="fab fa-whatsapp text-lg text-green-500"></i>
-                <span>Enviar WhatsApp</span>
+            <button onclick="exportar('jpg')" class="bg-white hover:bg-emerald-50 text-emerald-700 font-bold py-3 px-5 rounded-xl shadow-sm border border-emerald-100 flex items-center space-x-2 transition-all text-xs uppercase">
+                <i class="fab fa-whatsapp text-green-500"></i>
+                <span>WhatsApp</span>
             </button>
-            <button onclick="exportar('pdf')" class="bg-slate-900 hover:bg-black text-white font-black py-3 px-5 rounded-2xl shadow-md flex items-center space-x-2 transition-all text-xs uppercase tracking-wider">
-                <i class="fas fa-file-pdf text-lg text-red-400"></i>
+            <button onclick="exportar('pdf')" class="bg-slate-900 hover:bg-black text-white font-bold py-3 px-5 rounded-xl shadow-sm flex items-center space-x-2 transition-all text-xs uppercase">
+                <i class="fas fa-file-pdf text-red-400"></i>
                 <span>Baixar PDF</span>
             </button>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <!-- Formulário -->
             <div class="lg:col-span-4">
-                <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-2xl sticky top-6">
-                    <h2 id="formTitle" class="text-xl font-black text-slate-800 mb-8 flex items-center uppercase tracking-tighter">
-                        <i class="fas fa-plus-circle text-emerald-500 mr-3 text-2xl"></i>
+                <div class="bg-white rounded-[1.5rem] p-6 border border-slate-200 shadow-xl sticky top-6">
+                    <h2 id="formTitle" class="text-lg font-black text-slate-800 mb-6 flex items-center uppercase tracking-tight">
+                        <i class="fas fa-plus-circle text-emerald-500 mr-3 text-xl"></i>
                         Novo Registro
                     </h2>
                     
-                    <form id="rocadeiraForm" class="space-y-6">
+                    <form id="rocadeiraForm" class="space-y-5">
                         <input type="hidden" id="editId" value="">
 
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Data da Operação</label>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1 tracking-widest">Data</label>
                                 <div class="input-group-icon">
                                     <i class="fas fa-calendar-alt"></i>
-                                    <input type="date" id="data" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700">
+                                    <input type="date" id="data" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-700">
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Operador</label>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1 tracking-widest">Operador</label>
                                     <div class="input-group-icon">
                                         <i class="fas fa-user-tie"></i>
-                                        <select id="operadorSelect" required onchange="toggleOutroOperador()" class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
-                                            <option value="">Selecione...</option>
+                                        <select id="operadorSelect" required onchange="toggleOutroOperador()" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
                                             <option value="EDUARDO">EDUARDO</option>
                                             <option value="MESSIAS">MESSIAS</option>
                                             <option value="OUTRO">OUTRO...</option>
                                         </select>
                                     </div>
                                     <div id="outroOperadorContainer" class="mt-2 hidden">
-                                        <input type="text" id="operadorOutro" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-700 uppercase" placeholder="Nome do Operador">
+                                        <input type="text" id="operadorOutro" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold text-slate-700 uppercase" placeholder="Nome">
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Equipamento</label>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1 tracking-widest">Equipamento</label>
                                     <div class="input-group-icon">
                                         <i class="fas fa-cog"></i>
-                                        <select id="equipamento" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
+                                        <select id="equipamento" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
                                             <option value="Roçadeira 01">Roçadeira 01</option>
                                             <option value="Roçadeira 02">Roçadeira 02</option>
                                             <option value="Roçadeira 03">Roçadeira 03</option>
@@ -194,10 +216,10 @@
                             </div>
 
                             <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Localização (Bloco)</label>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1 tracking-widest">Localização (Bloco)</label>
                                 <div class="input-group-icon">
                                     <i class="fas fa-map-marked-alt"></i>
-                                    <select id="bloco" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
+                                    <select id="bloco" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
                                         <script>
                                             for(let i=1; i<=15; i++) {
                                                 let b = `BLOCO ${String(i).padStart(2, '0')}`;
@@ -209,36 +231,33 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Hora Início</label>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1 tracking-widest">Início</label>
                                     <div class="input-group-icon">
                                         <i class="fas fa-play-circle"></i>
-                                        <input type="time" id="horaInicio" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700">
+                                        <input type="time" id="horaInicio" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-700">
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Hora Fim</label>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1 tracking-widest">Fim</label>
                                     <div class="input-group-icon">
                                         <i class="fas fa-stop-circle"></i>
-                                        <input type="time" id="horaFim" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700">
+                                        <input type="time" id="horaFim" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-700">
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="bg-slate-50 border-2 border-dashed border-slate-200 p-4 rounded-2xl flex justify-between items-center">
-                                <div class="flex items-center space-x-3">
-                                    <i class="fas fa-hourglass-half text-emerald-500"></i>
-                                    <span class="text-[10px] font-black text-slate-500 uppercase">Tempo Estimado</span>
-                                </div>
-                                <span id="displayTempoTotal" class="text-xl font-black text-slate-800">00:00h</span>
+                            <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center">
+                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tempo Calculado</span>
+                                <span id="displayTempoTotal" class="text-lg font-black text-emerald-700">00:00h</span>
                             </div>
 
                             <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Status do Equipamento</label>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1 tracking-widest">Status Atual</label>
                                 <div class="input-group-icon">
                                     <i class="fas fa-check-shield"></i>
-                                    <select id="status" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
+                                    <select id="status" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
                                         <option value="Operacional">Operacional (OK)</option>
                                         <option value="Manutenção Necessária">Manutenção Necessária</option>
                                         <option value="Ajuste de Lâmina">Ajuste de Lâmina</option>
@@ -247,12 +266,12 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-col gap-3">
-                            <button type="submit" id="submitBtn" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black py-5 rounded-[1.5rem] shadow-xl active:scale-95 transition-all uppercase text-sm tracking-widest flex items-center justify-center space-x-3">
+                        <div class="flex flex-col gap-2 pt-2">
+                            <button type="submit" id="submitBtn" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black py-4 rounded-xl shadow-lg active:scale-95 transition-all uppercase text-xs tracking-widest flex items-center justify-center space-x-2">
                                 <i class="fas fa-save"></i>
-                                <span>Registrar Leitura</span>
+                                <span>Salvar Registro</span>
                             </button>
-                            <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden w-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-black py-3 rounded-xl transition-all uppercase text-[10px] tracking-widest">
+                            <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden w-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold py-2 rounded-lg transition-all uppercase text-[9px] tracking-widest">
                                 Cancelar Edição
                             </button>
                         </div>
@@ -262,19 +281,18 @@
 
             <!-- Listagem principal -->
             <div class="lg:col-span-8">
-                <div class="flex items-center justify-between mb-6 px-2">
-                    <h3 class="font-black text-slate-400 uppercase text-xs tracking-[0.2em]">Histórico de Atividades</h3>
-                    <div class="bg-slate-200 h-px flex-grow mx-4"></div>
-                    <span id="totalBadge" class="bg-slate-800 text-white text-[10px] font-black px-3 py-1 rounded-full">0</span>
+                <div class="flex items-center justify-between mb-4 px-2">
+                    <h3 class="font-black text-slate-400 uppercase text-[10px] tracking-[0.2em]">Fluxo de Atividades</h3>
+                    <span id="totalBadge" class="bg-white border border-slate-200 text-slate-800 text-[10px] font-black px-3 py-1 rounded-lg shadow-sm">0 REGISTROS</span>
                 </div>
                 
-                <div id="cardsGrid" class="grid grid-cols-1 gap-6"></div>
+                <div id="cardsGrid" class="grid grid-cols-1 gap-4"></div>
                 
-                <div id="emptyState" class="flex flex-col items-center justify-center py-32 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
-                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-clipboard-list text-slate-300 text-3xl"></i>
+                <div id="emptyState" class="flex flex-col items-center justify-center py-24 bg-white rounded-[2rem] border-2 border-dashed border-slate-200 shadow-inner">
+                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                        <i class="fas fa-clipboard-list text-slate-200 text-2xl"></i>
                     </div>
-                    <p class="text-slate-400 font-black uppercase text-[10px] tracking-widest">Aguardando registros</p>
+                    <p class="text-slate-300 font-black uppercase text-[9px] tracking-[0.3em]">Nenhum registro encontrado</p>
                 </div>
             </div>
         </div>
@@ -284,25 +302,19 @@
     <div id="exportArea">
         <div class="header-bg p-10 text-white flex justify-between items-center">
             <div>
-                <h1 class="text-3xl font-black uppercase tracking-tight">Resumo de Manuseio Roçadeira</h1>
-                <h2 class="text-xl font-medium opacity-80">SPG Oásis</h2>
+                <h1 class="text-3xl font-black uppercase tracking-tight">Relatório de Manuseio</h1>
+                <h2 class="text-xl font-medium opacity-80">Oásis • Sistema de Gestão</h2>
                 <div class="w-40 h-1.5 bg-emerald-400 my-4 rounded-full"></div>
-                <p id="exportMeta" class="text-base font-bold opacity-90 tracking-wide">Data: --/--/---- • Semana --</p>
+                <p id="exportMeta" class="text-base font-bold opacity-90 tracking-wide">--/--/----</p>
             </div>
             <img src="https://i.imgur.com/rB1Lk8y.png" style="width: 120px; height: 120px;">
         </div>
         
-        <div class="p-12 bg-white">
-            <div class="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200 mb-12 text-center relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-2 bg-emerald-500"></div>
-                <span class="block text-xs font-black text-slate-400 uppercase tracking-[0.4em] mb-3">Total de Operações Registradas</span>
-                <span id="exportCount" class="text-7xl font-black text-slate-900 tracking-tighter">0</span>
-            </div>
+        <div class="p-12 bg-[#f0f4f8]">
+            <div id="exportList" class="grid grid-cols-1 gap-6"></div>
 
-            <div id="exportList" class="grid grid-cols-1 gap-8"></div>
-            
-            <div class="mt-20 pt-10 border-t border-slate-100 text-center">
-                <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.6em]">SPG • CONTROLE INTEGRADO • OÁSIS</p>
+            <div class="mt-20 pt-10 border-t border-slate-200 text-center">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.6em]">SPG • DADOS OFICIAIS • OÁSIS</p>
             </div>
         </div>
     </div>
@@ -423,8 +435,8 @@
             document.getElementById('rocadeiraForm').reset();
             opOutroCont.classList.add('hidden');
             editIdInput.value = "";
-            formTitle.innerHTML = `<i class="fas fa-plus-circle text-emerald-500 mr-3 text-2xl"></i> Novo Registro`;
-            submitBtn.innerHTML = `<i class="fas fa-save"></i> <span>Registrar Leitura</span>`;
+            formTitle.innerHTML = `<i class="fas fa-plus-circle text-emerald-500 mr-3 text-xl"></i> Novo Registro`;
+            submitBtn.innerHTML = `<i class="fas fa-save"></i> <span>Salvar Registro</span>`;
             cancelEditBtn.classList.add('hidden');
             displayTempo.innerText = "00:00h";
             initDate();
@@ -454,7 +466,7 @@
             const statusSelect = document.getElementById('status');
             statusSelect.value = Array.from(statusSelect.options).find(o => o.value.toUpperCase() === reg.status)?.value || "Operacional";
 
-            formTitle.innerHTML = `<i class="fas fa-edit text-amber-500 mr-3 text-2xl"></i> Editar Registro`;
+            formTitle.innerHTML = `<i class="fas fa-edit text-amber-500 mr-3 text-xl"></i> Editar Registro`;
             submitBtn.innerHTML = `<i class="fas fa-check"></i> <span>Salvar Alterações</span>`;
             cancelEditBtn.classList.remove('hidden');
             
@@ -469,8 +481,7 @@
 
         function render() {
             emptyState.classList.toggle('hidden', registros.length > 0);
-            document.getElementById('totalBadge').innerText = registros.length;
-            document.getElementById('exportCount').innerText = registros.length;
+            document.getElementById('totalBadge').innerText = `${registros.length} REGISTROS`;
 
             const registrosOrdenados = [...registros].sort((a, b) => a.bloco.localeCompare(b.bloco));
 
@@ -479,64 +490,70 @@
         }
 
         function generateCardHtml(r, showActions) {
-            const actionButtons = showActions ? `
-                <div class="flex space-x-3 mr-3">
-                    <button onclick="editarRegistro(${r.id})" class="action-btn text-slate-300 hover:text-amber-500" title="Editar">
-                        <i class="fas fa-pen-to-square"></i>
-                    </button>
-                    <button onclick="excluirRegistro(${r.id})" class="action-btn text-slate-300 hover:text-red-500" title="Excluir">
-                        <i class="fas fa-trash-can"></i>
-                    </button>
-                </div>
-            ` : '';
-
             return `
-                <div class="card-base ${r.statusClass} p-8 shadow-md relative transition-all">
-                    <div class="flex justify-between items-start mb-6">
-                        <div class="space-y-1">
-                            <div class="flex items-center space-x-2">
-                                <i class="fas fa-user-circle text-emerald-600 text-[10px]"></i>
-                                <span class="text-xs font-black text-emerald-800 tracking-widest uppercase">OPERADOR: ${r.operador}</span>
+                <div class="card-base ${r.statusClass} p-5 relative">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                                <i class="fas fa-user text-xs"></i>
                             </div>
-                            <h3 class="text-xl font-black text-slate-900 uppercase leading-none mt-2">
-                                <span class="text-slate-500">${r.bloco}</span>
-                            </h3>
-                            <div class="flex items-center space-x-2 pt-1">
-                                <i class="fas fa-calendar-day text-slate-300 text-[10px]"></i>
-                                <span class="text-[10px] font-black text-slate-400 tracking-tighter">${r.data}</span>
+                            <div>
+                                <span class="field-label">Operador</span>
+                                <span class="text-sm font-black text-slate-800 tracking-tight">${r.operador}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            ${showActions ? `
+                                <div class="flex space-x-1">
+                                    <button onclick="editarRegistro(${r.id})" class="action-btn text-slate-300 hover:text-amber-500">
+                                        <i class="fas fa-pen text-[10px]"></i>
+                                    </button>
+                                    <button onclick="excluirRegistro(${r.id})" class="action-btn text-slate-300 hover:text-red-500">
+                                        <i class="fas fa-trash text-[10px]"></i>
+                                    </button>
+                                </div>
+                            ` : ''}
+                            <span class="status-badge ${r.badgeClass}">${r.status}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div class="data-field field-bloco">
+                            <i class="fas fa-location-dot text-sm"></i>
+                            <div>
+                                <span class="field-label">Local</span>
+                                <span class="field-value">${r.bloco}</span>
                             </div>
                         </div>
                         
-                        <div class="flex items-center">
-                            ${actionButtons}
-                            <span class="status-badge ${r.badgeClass}">
-                                ${r.status}
-                            </span>
+                        <div class="data-field field-equip">
+                            <i class="fas fa-screwdriver-wrench text-sm"></i>
+                            <div>
+                                <span class="field-label">Máquina</span>
+                                <span class="field-value">${r.equip}</span>
+                            </div>
+                        </div>
+
+                        <div class="data-field field-tempo">
+                            <i class="fas fa-clock text-sm"></i>
+                            <div>
+                                <span class="field-label">Janela</span>
+                                <span class="field-value">${r.inicio} - ${r.fim}</span>
+                            </div>
+                        </div>
+
+                        <div class="data-field field-total">
+                            <i class="fas fa-hourglass-start text-sm opacity-60"></i>
+                            <div>
+                                <span class="field-label opacity-60">Total</span>
+                                <span class="field-value text-lg">${r.duracao}h</span>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
-                            <div>
-                                <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Equipamento</span>
-                                <span class="text-sm font-black text-slate-800">${r.equip}</span>
-                            </div>
-                            <i class="fas fa-screwdriver-wrench text-slate-200 text-xl"></i>
-                        </div>
-                        <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
-                            <div>
-                                <span class="block text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Duração Total</span>
-                                <span class="text-lg font-black text-emerald-900">${r.duracao}h</span>
-                            </div>
-                            <i class="fas fa-stopwatch text-emerald-200 text-xl"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-slate-400">
-                        <div class="flex items-center space-x-2">
-                            <i class="fas fa-clock text-[10px]"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-wider">Janela: ${r.inicio} ÀS ${r.fim}</span>
-                        </div>
+
+                    <div class="mt-3 flex justify-between items-center text-[8px] text-slate-300 font-black uppercase tracking-widest">
+                        <span>ID: #${r.id.toString().slice(-4)}</span>
+                        <span><i class="fas fa-calendar mr-1"></i> ${r.data}</span>
                     </div>
                 </div>
             `;
@@ -566,7 +583,7 @@
             const canvas = await html2canvas(area, { 
                 scale: 2, 
                 useCORS: true, 
-                backgroundColor: '#ffffff',
+                backgroundColor: '#f0f4f8',
                 windowWidth: 1000 
             });
 
