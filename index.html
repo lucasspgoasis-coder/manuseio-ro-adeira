@@ -10,7 +10,6 @@
     <!-- Bibliotecas para Exportação -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- Biblioteca para Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
@@ -59,7 +58,6 @@
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
         }
 
-        /* Estilos de Status Ultra Destacados */
         .status-badge {
             font-size: 11px;
             font-weight: 900;
@@ -70,20 +68,27 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
-        .card-operacional { border-left: 10px solid #10b981; background: #ffffff; }
-        .card-manutencao { border-left: 10px solid #f59e0b; background: #ffffff; }
-        .card-ajuste { border-left: 10px solid #ef4444; background: #ffffff; }
+        /* Estilos de Card */
+        .card-base {
+            border-radius: 2rem;
+            background: #ffffff;
+            border: 1px solid #f1f5f9;
+        }
+        .card-operacional { border-left: 10px solid #10b981; }
+        .card-manutencao { border-left: 10px solid #f59e0b; }
+        .card-ajuste { border-left: 10px solid #ef4444; }
 
         .badge-operacional { background: #10b981; color: #ffffff; }
         .badge-manutencao { background: #f59e0b; color: #ffffff; }
         .badge-ajuste { background: #ef4444; color: #ffffff; }
 
+        /* Área de Exportação Oculta */
         #exportArea {
             position: absolute;
             left: -9999px;
             top: -9999px;
-            width: 800px;
-            background: #f8fafc;
+            width: 1000px;
+            background: #ffffff;
         }
 
         .action-btn {
@@ -91,7 +96,19 @@
             cursor: pointer;
         }
         .action-btn:hover {
-            transform: scale(1.1);
+            transform: scale(1.15);
+        }
+
+        .signature-line {
+            border-top: 2px solid #e2e8f0;
+            width: 250px;
+            margin-top: 40px;
+            text-align: center;
+            padding-top: 8px;
+            font-size: 10px;
+            font-weight: 900;
+            color: #64748b;
+            text-transform: uppercase;
         }
     </style>
 </head>
@@ -148,7 +165,6 @@
                     </h2>
                     
                     <form id="rocadeiraForm" class="space-y-6">
-                        <!-- ID Oculto para Edição -->
                         <input type="hidden" id="editId" value="">
 
                         <div class="space-y-4">
@@ -188,7 +204,8 @@
                                     <select id="bloco" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
                                         <script>
                                             for(let i=1; i<=15; i++) {
-                                                document.write(`<option value="Bloco ${String(i).padStart(2, '0')}">Bloco ${String(i).padStart(2, '0')}</option>`);
+                                                let b = `Bloco ${String(i).padStart(2, '0')}`;
+                                                document.write(`<option value="${b}">${b}</option>`);
                                             }
                                         </script>
                                         <option value="Área Geral">Área Geral</option>
@@ -216,7 +233,7 @@
                             <div class="bg-slate-50 border-2 border-dashed border-slate-200 p-4 rounded-2xl flex justify-between items-center">
                                 <div class="flex items-center space-x-3">
                                     <i class="fas fa-hourglass-half text-emerald-500"></i>
-                                    <span class="text-[10px] font-black text-slate-500 uppercase">Tempo de Operação</span>
+                                    <span class="text-[10px] font-black text-slate-500 uppercase">Tempo Estimado</span>
                                 </div>
                                 <span id="displayTempoTotal" class="text-xl font-black text-slate-800">00:00h</span>
                             </div>
@@ -247,7 +264,7 @@
                 </div>
             </div>
 
-            <!-- Listagem -->
+            <!-- Listagem principal (Com botões de edição) -->
             <div class="lg:col-span-8">
                 <div class="flex items-center justify-between mb-6 px-2">
                     <h3 class="font-black text-slate-400 uppercase text-xs tracking-[0.2em]">Histórico de Atividades</h3>
@@ -261,35 +278,44 @@
                     <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
                         <i class="fas fa-clipboard-list text-slate-300 text-3xl"></i>
                     </div>
-                    <p class="text-slate-400 font-black uppercase text-[10px] tracking-widest">Aguardando registros de manuseio</p>
+                    <p class="text-slate-400 font-black uppercase text-[10px] tracking-widest">Aguardando registros</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ÁREA DE EXPORTAÇÃO (Invisível no site) -->
+    <!-- ÁREA DE EXPORTAÇÃO (FORMATO RELATÓRIO LIMPO) -->
     <div id="exportArea">
-        <div class="header-bg p-8 text-white flex justify-between items-center">
+        <div class="header-bg p-10 text-white flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-black uppercase tracking-tight">Leitura de Manuseio Roçadeira</h1>
+                <h1 class="text-3xl font-black uppercase tracking-tight">Resumo de Manuseio Roçadeira</h1>
                 <h2 class="text-xl font-medium opacity-80">SPG Oásis</h2>
-                <div class="w-32 h-1 bg-emerald-400 my-4 rounded-full"></div>
-                <p id="exportMeta" class="text-sm font-bold opacity-90 tracking-wide">Data: --/--/---- • Semana --</p>
+                <div class="w-40 h-1.5 bg-emerald-400 my-4 rounded-full"></div>
+                <p id="exportMeta" class="text-base font-bold opacity-90 tracking-wide">Data: --/--/---- • Semana --</p>
             </div>
-            <img src="https://i.imgur.com/rB1Lk8y.png" style="width: 100px; height: 100px;">
+            <img src="https://i.imgur.com/rB1Lk8y.png" style="width: 120px; height: 120px;">
         </div>
         
-        <div class="p-10 bg-slate-50">
-            <div class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm mb-10 text-center relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1.5 bg-emerald-500"></div>
-                <span class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Total de Operações no Período</span>
-                <span id="exportCount" class="text-6xl font-black text-slate-900 tracking-tighter">0</span>
+        <div class="p-12 bg-white">
+            <!-- Estatística de Topo -->
+            <div class="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200 mb-12 text-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-2 bg-emerald-500"></div>
+                <span class="block text-xs font-black text-slate-400 uppercase tracking-[0.4em] mb-3">Total de Operações Registradas</span>
+                <span id="exportCount" class="text-7xl font-black text-slate-900 tracking-tighter">0</span>
             </div>
 
-            <div id="exportList" class="grid grid-cols-1 gap-6"></div>
+            <div id="exportList" class="grid grid-cols-1 gap-8">
+                <!-- Cards em ordem alfabética aqui -->
+            </div>
             
-            <div class="mt-16 pt-10 border-t border-slate-200 text-center">
-                <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">SPG • CONTROLE INTEGRADO • OÁSIS</p>
+            <!-- Assinaturas -->
+            <div class="mt-20 flex justify-around items-end">
+                <div class="signature-line">Assinatura Encarregado</div>
+                <div class="signature-line">Assinatura Operador</div>
+            </div>
+
+            <div class="mt-20 pt-10 border-t border-slate-100 text-center">
+                <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.6em]">SPG • CONTROLE INTEGRADO • OÁSIS</p>
             </div>
         </div>
     </div>
@@ -383,7 +409,7 @@
                 const index = registros.findIndex(r => r.id === reg.id);
                 if (index !== -1) registros[index] = reg;
             } else {
-                registros.unshift(reg);
+                registros.push(reg);
             }
             
             render();
@@ -408,25 +434,18 @@
             dataInput.value = reg.dataIso;
             document.getElementById('operador').value = reg.operador;
             document.getElementById('equipamento').value = reg.equip;
-            document.getElementById('bloco').value = reg.bloco.charAt(0) + reg.bloco.slice(1).toLowerCase(); // Ajuste de caixa pra bater com select
-            // Re-normalizar bloco para valor do select se necessário
-            const options = Array.from(document.getElementById('bloco').options).map(o => o.value);
-            if (!options.includes(reg.bloco)) {
-                 // Busca case insensitive se falhar
-                 const found = options.find(o => o.toUpperCase() === reg.bloco);
-                 if(found) document.getElementById('bloco').value = found;
-            }
+            
+            const blocoSelect = document.getElementById('bloco');
+            blocoSelect.value = Array.from(blocoSelect.options).find(o => o.value.toUpperCase() === reg.bloco)?.value || "Área Geral";
 
             hInicio.value = reg.inicio;
             hFim.value = reg.fim;
-            // Normalizar status para bater com select
+            
             const statusSelect = document.getElementById('status');
-            const statusOptions = Array.from(statusSelect.options);
-            const statusFound = statusOptions.find(o => o.value.toUpperCase() === reg.status);
-            if(statusFound) statusSelect.value = statusFound.value;
+            statusSelect.value = Array.from(statusSelect.options).find(o => o.value.toUpperCase() === reg.status)?.value || "Operacional";
 
-            formTitle.innerHTML = `<i class="fas fa-edit text-amber-500 mr-3 text-2xl"></i> Corrigir Registro`;
-            submitBtn.innerHTML = `<i class="fas fa-check"></i> <span>Atualizar Registro</span>`;
+            formTitle.innerHTML = `<i class="fas fa-edit text-amber-500 mr-3 text-2xl"></i> Editar Registro`;
+            submitBtn.innerHTML = `<i class="fas fa-check"></i> <span>Salvar Alterações</span>`;
             cancelEditBtn.classList.remove('hidden');
             
             calcularTempo();
@@ -434,51 +453,67 @@
         }
 
         function excluirRegistro(id) {
-            if (confirm("Deseja realmente excluir este registro?")) {
-                registros = registros.filter(r => r.id !== id);
-                render();
-            }
+            registros = registros.filter(r => r.id !== id);
+            render();
         }
 
+        // Função principal de renderização que cuida de ambos os containers
         function render() {
             emptyState.classList.toggle('hidden', registros.length > 0);
             document.getElementById('totalBadge').innerText = registros.length;
+            document.getElementById('exportCount').innerText = registros.length;
+
+            // Ordenação Alfabética por Bloco para o Relatório e Visualização
+            const registrosOrdenados = [...registros].sort((a, b) => a.bloco.localeCompare(b.bloco));
+
+            // Render para TELA (Com botões)
+            cardsGrid.innerHTML = registrosOrdenados.map(r => generateCardHtml(r, true)).join('');
             
-            const html = registros.map(r => `
-                <div class="${r.statusClass} p-8 rounded-[2rem] shadow-lg relative border border-slate-100 transition-all hover:shadow-xl">
+            // Render para EXPORTAÇÃO (Sem botões)
+            exportList.innerHTML = registrosOrdenados.map(r => generateCardHtml(r, false)).join('');
+        }
+
+        // Helper para gerar o HTML do card
+        function generateCardHtml(r, showActions) {
+            const actionButtons = showActions ? `
+                <div class="flex space-x-3 mr-3">
+                    <button onclick="editarRegistro(${r.id})" class="action-btn text-slate-300 hover:text-amber-500" title="Editar">
+                        <i class="fas fa-pen-to-square"></i>
+                    </button>
+                    <button onclick="excluirRegistro(${r.id})" class="action-btn text-slate-300 hover:text-red-500" title="Excluir">
+                        <i class="fas fa-trash-can"></i>
+                    </button>
+                </div>
+            ` : '';
+
+            return `
+                <div class="card-base ${r.statusClass} p-8 shadow-md relative transition-all">
                     <div class="flex justify-between items-start mb-6">
                         <div class="space-y-1">
                             <div class="flex items-center space-x-2">
-                                <i class="fas fa-calendar-alt text-slate-300 text-xs"></i>
+                                <i class="fas fa-calendar-day text-slate-300 text-[10px]"></i>
                                 <span class="text-[10px] font-black text-slate-400 tracking-tighter">${r.data}</span>
                             </div>
-                            <h3 class="text-base md:text-xl font-black text-slate-900 tracking-tight uppercase leading-none">
-                                ${r.bloco} • <span class="text-emerald-700">${r.operador}</span>
+                            <h3 class="text-xl font-black text-slate-900 uppercase leading-none">
+                                <span class="text-emerald-700">${r.bloco}</span> • ${r.operador}
                             </h3>
                         </div>
                         
-                        <div class="flex items-center space-x-4">
-                            <div class="flex space-x-2 mr-2">
-                                <button onclick="editarRegistro(${r.id})" class="action-btn text-slate-300 hover:text-amber-500" title="Editar">
-                                    <i class="fas fa-pen"></i>
-                                </button>
-                                <button onclick="excluirRegistro(${r.id})" class="action-btn text-slate-300 hover:text-red-500" title="Excluir">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                            <span class="status-badge ${r.badgeClass} whitespace-nowrap">
+                        <div class="flex items-center">
+                            ${actionButtons}
+                            <span class="status-badge ${r.badgeClass}">
                                 ${r.status}
                             </span>
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 gap-4">
                         <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
                             <div>
                                 <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Equipamento</span>
                                 <span class="text-sm font-black text-slate-800">${r.equip}</span>
                             </div>
-                            <i class="fas fa-tools text-slate-200 text-xl"></i>
+                            <i class="fas fa-screwdriver-wrench text-slate-200 text-xl"></i>
                         </div>
                         <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
                             <div>
@@ -494,42 +529,42 @@
                             <i class="fas fa-clock text-[10px]"></i>
                             <span class="text-[10px] font-bold uppercase tracking-wider">Janela: ${r.inicio} ÀS ${r.fim}</span>
                         </div>
-                        <i class="fas fa-fingerprint text-[10px] opacity-10">ID: ${r.id}</i>
                     </div>
                 </div>
-            `).join('');
-            
-            cardsGrid.innerHTML = html;
-            exportList.innerHTML = html;
-            document.getElementById('exportCount').innerText = registros.length;
+            `;
         }
 
         function exportarExcel() {
             if (registros.length === 0) return;
-            const dadosExcel = registros.map(r => ({
+            const dadosExcel = [...registros].sort((a,b) => a.bloco.localeCompare(b.bloco)).map(r => ({
                 'DATA': r.data,
+                'BLOCO': r.bloco,
                 'OPERADOR': r.operador,
-                'LOCALIZAÇÃO': r.bloco,
                 'EQUIPAMENTO': r.equip,
                 'HORA INÍCIO': r.inicio,
                 'HORA FIM': r.fim,
-                'DURAÇÃO (H)': r.duracao,
-                'STATUS EQUIPAMENTO': r.status
+                'DURAÇÃO': r.duracao,
+                'STATUS': r.status
             }));
             const ws = XLSX.utils.json_to_sheet(dadosExcel);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Leituras Diárias");
+            XLSX.utils.book_append_sheet(wb, ws, "Roçadeira");
             XLSX.writeFile(wb, `leitura-rocadeira-${Date.now()}.xlsx`);
         }
 
         async function exportar(tipo) {
             if(registros.length === 0) return;
             const area = document.getElementById('exportArea');
-            const canvas = await html2canvas(area, { scale: 2, useCORS: true, backgroundColor: '#f8fafc' });
+            const canvas = await html2canvas(area, { 
+                scale: 2, 
+                useCORS: true, 
+                backgroundColor: '#ffffff',
+                windowWidth: 1000 
+            });
 
             if (tipo === 'jpg') {
                 const link = document.createElement('a');
-                link.download = `relatorio-rocadeira-${Date.now()}.jpg`;
+                link.download = `relatorio-spg-rocadeira.jpg`;
                 link.href = canvas.toDataURL('image/jpeg', 0.9);
                 link.click();
             } else {
@@ -539,7 +574,7 @@
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`relatorio-rocadeira.pdf`);
+                pdf.save(`relatorio-spg-rocadeira.pdf`);
             }
         }
 
