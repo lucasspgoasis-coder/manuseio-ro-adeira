@@ -85,6 +85,14 @@
             width: 800px;
             background: #f8fafc;
         }
+
+        .action-btn {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body class="min-h-screen pb-16">
@@ -134,12 +142,15 @@
             <!-- Formulário -->
             <div class="lg:col-span-4">
                 <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-2xl sticky top-6">
-                    <h2 class="text-xl font-black text-slate-800 mb-8 flex items-center uppercase tracking-tighter">
+                    <h2 id="formTitle" class="text-xl font-black text-slate-800 mb-8 flex items-center uppercase tracking-tighter">
                         <i class="fas fa-plus-circle text-emerald-500 mr-3 text-2xl"></i>
                         Novo Registro
                     </h2>
                     
                     <form id="rocadeiraForm" class="space-y-6">
+                        <!-- ID Oculto para Edição -->
+                        <input type="hidden" id="editId" value="">
+
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Data da Operação</label>
@@ -223,10 +234,15 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black py-5 rounded-[1.5rem] shadow-xl active:scale-95 transition-all uppercase text-sm tracking-widest flex items-center justify-center space-x-3">
-                            <i class="fas fa-save"></i>
-                            <span>Registrar Leitura</span>
-                        </button>
+                        <div class="flex flex-col gap-3">
+                            <button type="submit" id="submitBtn" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black py-5 rounded-[1.5rem] shadow-xl active:scale-95 transition-all uppercase text-sm tracking-widest flex items-center justify-center space-x-3">
+                                <i class="fas fa-save"></i>
+                                <span>Registrar Leitura</span>
+                            </button>
+                            <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden w-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-black py-3 rounded-xl transition-all uppercase text-[10px] tracking-widest">
+                                Cancelar Edição
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -286,6 +302,11 @@
         const cardsGrid = document.getElementById('cardsGrid');
         const exportList = document.getElementById('exportList');
         const emptyState = document.getElementById('emptyState');
+        const editIdInput = document.getElementById('editId');
+        const formTitle = document.getElementById('formTitle');
+        const submitBtn = document.getElementById('submitBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        
         let registros = [];
 
         function getWeek(d) {
@@ -330,23 +351,22 @@
             e.preventDefault();
             const tempoCalculado = calcularTempo();
             const statusVal = document.getElementById('status').value;
+            const currentEditId = editIdInput.value;
             
             let statusClass = "card-operacional";
             let badgeClass = "badge-operacional";
-            let statusIcon = "fa-check-circle";
 
             if(statusVal.includes("Manutenção")) {
                 statusClass = "card-manutencao";
                 badgeClass = "badge-manutencao";
-                statusIcon = "fa-exclamation-triangle";
             } else if(statusVal.includes("Ajuste")) {
                 statusClass = "card-ajuste";
                 badgeClass = "badge-ajuste";
-                statusIcon = "fa-tools";
             }
 
             const reg = {
-                id: Date.now(),
+                id: currentEditId ? parseInt(currentEditId) : Date.now(),
+                dataIso: dataInput.value,
                 data: dataInput.value.split('-').reverse().join('/'),
                 operador: document.getElementById('operador').value.toUpperCase(),
                 bloco: document.getElementById('bloco').value.toUpperCase(),
@@ -356,16 +376,69 @@
                 duracao: tempoCalculado,
                 status: statusVal.toUpperCase(),
                 statusClass,
-                badgeClass,
-                statusIcon
+                badgeClass
             };
             
-            registros.unshift(reg);
+            if (currentEditId) {
+                const index = registros.findIndex(r => r.id === reg.id);
+                if (index !== -1) registros[index] = reg;
+            } else {
+                registros.unshift(reg);
+            }
+            
             render();
-            e.target.reset();
+            resetForm();
+        });
+
+        function resetForm() {
+            document.getElementById('rocadeiraForm').reset();
+            editIdInput.value = "";
+            formTitle.innerHTML = `<i class="fas fa-plus-circle text-emerald-500 mr-3 text-2xl"></i> Novo Registro`;
+            submitBtn.innerHTML = `<i class="fas fa-save"></i> <span>Registrar Leitura</span>`;
+            cancelEditBtn.classList.add('hidden');
             displayTempo.innerText = "00:00h";
             initDate();
-        });
+        }
+
+        function editarRegistro(id) {
+            const reg = registros.find(r => r.id === id);
+            if (!reg) return;
+
+            editIdInput.value = reg.id;
+            dataInput.value = reg.dataIso;
+            document.getElementById('operador').value = reg.operador;
+            document.getElementById('equipamento').value = reg.equip;
+            document.getElementById('bloco').value = reg.bloco.charAt(0) + reg.bloco.slice(1).toLowerCase(); // Ajuste de caixa pra bater com select
+            // Re-normalizar bloco para valor do select se necessário
+            const options = Array.from(document.getElementById('bloco').options).map(o => o.value);
+            if (!options.includes(reg.bloco)) {
+                 // Busca case insensitive se falhar
+                 const found = options.find(o => o.toUpperCase() === reg.bloco);
+                 if(found) document.getElementById('bloco').value = found;
+            }
+
+            hInicio.value = reg.inicio;
+            hFim.value = reg.fim;
+            // Normalizar status para bater com select
+            const statusSelect = document.getElementById('status');
+            const statusOptions = Array.from(statusSelect.options);
+            const statusFound = statusOptions.find(o => o.value.toUpperCase() === reg.status);
+            if(statusFound) statusSelect.value = statusFound.value;
+
+            formTitle.innerHTML = `<i class="fas fa-edit text-amber-500 mr-3 text-2xl"></i> Corrigir Registro`;
+            submitBtn.innerHTML = `<i class="fas fa-check"></i> <span>Atualizar Registro</span>`;
+            cancelEditBtn.classList.remove('hidden');
+            
+            calcularTempo();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function excluirRegistro(id) {
+            if (confirm("Deseja realmente excluir este registro?")) {
+                registros = registros.filter(r => r.id !== id);
+                render();
+            }
+        }
 
         function render() {
             emptyState.classList.toggle('hidden', registros.length > 0);
@@ -383,9 +456,20 @@
                                 ${r.bloco} • <span class="text-emerald-700">${r.operador}</span>
                             </h3>
                         </div>
-                        <span class="status-badge ${r.badgeClass} whitespace-nowrap">
-                            ${r.status}
-                        </span>
+                        
+                        <div class="flex items-center space-x-4">
+                            <div class="flex space-x-2 mr-2">
+                                <button onclick="editarRegistro(${r.id})" class="action-btn text-slate-300 hover:text-amber-500" title="Editar">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button onclick="excluirRegistro(${r.id})" class="action-btn text-slate-300 hover:text-red-500" title="Excluir">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <span class="status-badge ${r.badgeClass} whitespace-nowrap">
+                                ${r.status}
+                            </span>
+                        </div>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -410,7 +494,7 @@
                             <i class="fas fa-clock text-[10px]"></i>
                             <span class="text-[10px] font-bold uppercase tracking-wider">Janela: ${r.inicio} ÀS ${r.fim}</span>
                         </div>
-                        <i class="fas fa-info-circle text-xs opacity-20"></i>
+                        <i class="fas fa-fingerprint text-[10px] opacity-10">ID: ${r.id}</i>
                     </div>
                 </div>
             `).join('');
@@ -420,11 +504,8 @@
             document.getElementById('exportCount').innerText = registros.length;
         }
 
-        // Função de Exportação Excel
         function exportarExcel() {
             if (registros.length === 0) return;
-            
-            // Mapeia os dados para o formato de planilha
             const dadosExcel = registros.map(r => ({
                 'DATA': r.data,
                 'OPERADOR': r.operador,
@@ -435,12 +516,9 @@
                 'DURAÇÃO (H)': r.duracao,
                 'STATUS EQUIPAMENTO': r.status
             }));
-
             const ws = XLSX.utils.json_to_sheet(dadosExcel);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Leituras Diárias");
-
-            // Gerar arquivo e baixar
             XLSX.writeFile(wb, `leitura-rocadeira-${Date.now()}.xlsx`);
         }
 
