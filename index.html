@@ -53,7 +53,6 @@
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
         }
 
-        /* Estilos de Card (Flash Cards Coloridos) */
         .card-base {
             border-radius: 1.5rem;
             background: #ffffff;
@@ -231,26 +230,51 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1 tracking-widest">Início</label>
-                                    <div class="input-group-icon">
-                                        <i class="fas fa-play-circle"></i>
-                                        <input type="time" id="horaInicio" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-700">
+                            <!-- Período 01: Manhã -->
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Turno Manhã</span>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Início</label>
+                                        <div class="input-group-icon">
+                                            <i class="fas fa-play-circle text-emerald-500"></i>
+                                            <input type="time" id="horaInicio1" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold text-slate-700 text-sm">
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1 tracking-widest">Fim</label>
-                                    <div class="input-group-icon">
-                                        <i class="fas fa-stop-circle"></i>
-                                        <input type="time" id="horaFim" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-700">
+                                    <div>
+                                        <label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Fim</label>
+                                        <div class="input-group-icon">
+                                            <i class="fas fa-stop-circle text-emerald-500"></i>
+                                            <input type="time" id="horaFim1" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold text-slate-700 text-sm">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center">
-                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tempo Calculado</span>
-                                <span id="displayTempoTotal" class="text-lg font-black text-emerald-700">00:00h</span>
+                            <!-- Período 02: Tarde -->
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Turno Tarde</span>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Início</label>
+                                        <div class="input-group-icon">
+                                            <i class="fas fa-play-circle text-orange-500"></i>
+                                            <input type="time" id="horaInicio2" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold text-slate-700 text-sm">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase">Fim</label>
+                                        <div class="input-group-icon">
+                                            <i class="fas fa-stop-circle text-orange-500"></i>
+                                            <input type="time" id="horaFim2" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold text-slate-700 text-sm">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center shadow-lg">
+                                <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Horas Totais</span>
+                                <span id="displayTempoTotal" class="text-xl font-black text-white">00:00h</span>
                             </div>
 
                             <div>
@@ -282,7 +306,7 @@
             <!-- Listagem principal -->
             <div class="lg:col-span-8">
                 <div class="flex items-center justify-between mb-4 px-2">
-                    <h3 class="font-black text-slate-400 uppercase text-[10px] tracking-[0.2em]">Fluxo de Atividades</h3>
+                    <h3 class="font-black text-slate-400 uppercase text-[10px] tracking-[0.2em]">Registro de Manuseio de Roçadeira</h3>
                     <span id="totalBadge" class="bg-white border border-slate-200 text-slate-800 text-[10px] font-black px-3 py-1 rounded-lg shadow-sm">0 REGISTROS</span>
                 </div>
                 
@@ -302,7 +326,7 @@
     <div id="exportArea">
         <div class="header-bg p-10 text-white flex justify-between items-center">
             <div>
-                <h1 class="text-3xl font-black uppercase tracking-tight">Relatório de Manuseio</h1>
+                <h1 class="text-3xl font-black uppercase tracking-tight">Registro de Manuseio de Roçadeira</h1>
                 <h2 class="text-xl font-medium opacity-80">Oásis • Sistema de Gestão</h2>
                 <div class="w-40 h-1.5 bg-emerald-400 my-4 rounded-full"></div>
                 <p id="exportMeta" class="text-base font-bold opacity-90 tracking-wide">--/--/----</p>
@@ -321,8 +345,11 @@
 
     <script>
         const dataInput = document.getElementById('data');
-        const hInicio = document.getElementById('horaInicio');
-        const hFim = document.getElementById('horaFim');
+        const hInicio1 = document.getElementById('horaInicio1');
+        const hFim1 = document.getElementById('horaFim1');
+        const hInicio2 = document.getElementById('horaInicio2');
+        const hFim2 = document.getElementById('horaFim2');
+        
         const displayTempo = document.getElementById('displayTempoTotal');
         const cardsGrid = document.getElementById('cardsGrid');
         const exportList = document.getElementById('exportList');
@@ -354,27 +381,29 @@
             return Math.ceil((((d - new Date(Date.UTC(d.getUTCFullYear(), 0, 1))) / 86400000) + 1) / 7);
         }
 
-        function calcularTempo() {
-            const start = hInicio.value;
-            const end = hFim.value;
-            if (!start || !end) {
-                displayTempo.innerText = "00:00h";
-                return "00:00";
-            }
+        function diffMinutes(start, end) {
+            if (!start || !end) return 0;
             const s = start.split(':');
             const e = end.split(':');
             let minS = (parseInt(s[0]) * 60) + parseInt(s[1]);
             let minE = (parseInt(e[0]) * 60) + parseInt(e[1]);
             if (minE < minS) minE += 1440; 
-            const diff = minE - minS;
-            const horas = Math.floor(diff / 60);
-            const minutos = diff % 60;
+            return minE - minS;
+        }
+
+        function calcularTempoTotal() {
+            const m1 = diffMinutes(hInicio1.value, hFim1.value);
+            const m2 = diffMinutes(hInicio2.value, hFim2.value);
+            const total = m1 + m2;
+            
+            const horas = Math.floor(total / 60);
+            const minutos = total % 60;
             const res = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
             displayTempo.innerText = res + "h";
             return res;
         }
 
-        [hInicio, hFim].forEach(i => i.addEventListener('change', calcularTempo));
+        [hInicio1, hFim1, hInicio2, hFim2].forEach(i => i.addEventListener('change', calcularTempoTotal));
 
         dataInput.addEventListener('change', (e) => {
             if(!e.target.value) return;
@@ -388,7 +417,7 @@
 
         document.getElementById('rocadeiraForm').addEventListener('submit', e => {
             e.preventDefault();
-            const tempoCalculado = calcularTempo();
+            const tempoTotal = calcularTempoTotal();
             const statusVal = document.getElementById('status').value;
             const currentEditId = editIdInput.value;
             
@@ -412,9 +441,11 @@
                 operador: finalOperador,
                 bloco: document.getElementById('bloco').value.toUpperCase(),
                 equip: document.getElementById('equipamento').value,
-                inicio: hInicio.value,
-                fim: hFim.value,
-                duracao: tempoCalculado,
+                inicio1: hInicio1.value || "--:--",
+                fim1: hFim1.value || "--:--",
+                inicio2: hInicio2.value || "--:--",
+                fim2: hFim2.value || "--:--",
+                duracao: tempoTotal,
                 status: statusVal.toUpperCase(),
                 statusClass,
                 badgeClass
@@ -460,8 +491,11 @@
 
             document.getElementById('equipamento').value = reg.equip;
             document.getElementById('bloco').value = reg.bloco;
-            hInicio.value = reg.inicio;
-            hFim.value = reg.fim;
+            
+            hInicio1.value = reg.inicio1 === "--:--" ? "" : reg.inicio1;
+            hFim1.value = reg.fim1 === "--:--" ? "" : reg.fim1;
+            hInicio2.value = reg.inicio2 === "--:--" ? "" : reg.inicio2;
+            hFim2.value = reg.fim2 === "--:--" ? "" : reg.fim2;
             
             const statusSelect = document.getElementById('status');
             statusSelect.value = Array.from(statusSelect.options).find(o => o.value.toUpperCase() === reg.status)?.value || "Operacional";
@@ -470,7 +504,7 @@
             submitBtn.innerHTML = `<i class="fas fa-check"></i> <span>Salvar Alterações</span>`;
             cancelEditBtn.classList.remove('hidden');
             
-            calcularTempo();
+            calcularTempoTotal();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -537,15 +571,18 @@
                         <div class="data-field field-tempo">
                             <i class="fas fa-clock text-sm"></i>
                             <div>
-                                <span class="field-label">Janela</span>
-                                <span class="field-value">${r.inicio} - ${r.fim}</span>
+                                <span class="field-label">Manhã / Tarde</span>
+                                <span class="field-value text-[11px] leading-tight">
+                                    M: ${r.inicio1}-${r.fim1}<br>
+                                    T: ${r.inicio2}-${r.fim2}
+                                </span>
                             </div>
                         </div>
 
                         <div class="data-field field-total">
                             <i class="fas fa-hourglass-start text-sm opacity-60"></i>
                             <div>
-                                <span class="field-label opacity-60">Total</span>
+                                <span class="field-label opacity-60">Total Dia</span>
                                 <span class="field-value text-lg">${r.duracao}h</span>
                             </div>
                         </div>
@@ -566,9 +603,11 @@
                 'BLOCO': r.bloco,
                 'OPERADOR': r.operador,
                 'EQUIPAMENTO': r.equip,
-                'HORA INÍCIO': r.inicio,
-                'HORA FIM': r.fim,
-                'DURAÇÃO': r.duracao,
+                'MANHÃ INÍCIO': r.inicio1,
+                'MANHÃ FIM': r.fim1,
+                'TARDE INÍCIO': r.inicio2,
+                'TARDE FIM': r.fim2,
+                'DURAÇÃO TOTAL': r.duracao,
                 'STATUS': r.status
             }));
             const ws = XLSX.utils.json_to_sheet(dadosExcel);
