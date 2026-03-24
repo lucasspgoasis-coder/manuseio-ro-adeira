@@ -98,18 +98,6 @@
         .action-btn:hover {
             transform: scale(1.15);
         }
-
-        .signature-line {
-            border-top: 2px solid #e2e8f0;
-            width: 250px;
-            margin-top: 40px;
-            text-align: center;
-            padding-top: 8px;
-            font-size: 10px;
-            font-weight: 900;
-            color: #64748b;
-            text-transform: uppercase;
-        }
     </style>
 </head>
 <body class="min-h-screen pb-16">
@@ -181,7 +169,15 @@
                                     <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">Operador</label>
                                     <div class="input-group-icon">
                                         <i class="fas fa-user-tie"></i>
-                                        <input type="text" id="operador" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700 placeholder:font-normal" placeholder="Nome">
+                                        <select id="operadorSelect" required onchange="toggleOutroOperador()" class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
+                                            <option value="">Selecione...</option>
+                                            <option value="EDUARDO">EDUARDO</option>
+                                            <option value="MESSIAS">MESSIAS</option>
+                                            <option value="OUTRO">OUTRO...</option>
+                                        </select>
+                                    </div>
+                                    <div id="outroOperadorContainer" class="mt-2 hidden">
+                                        <input type="text" id="operadorOutro" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-700 uppercase" placeholder="Nome do Operador">
                                     </div>
                                 </div>
                                 <div>
@@ -202,13 +198,22 @@
                                 <div class="input-group-icon">
                                     <i class="fas fa-map-marked-alt"></i>
                                     <select id="bloco" required class="w-full px-4 py-4 rounded-2xl border border-slate-200 font-bold text-slate-700 bg-white appearance-none">
-                                        <script>
-                                            for(let i=1; i<=15; i++) {
-                                                let b = `Bloco ${String(i).padStart(2, '0')}`;
-                                                document.write(`<option value="${b}">${b}</option>`);
-                                            }
-                                        </script>
-                                        <option value="Área Geral">Área Geral</option>
+                                        <option value="BLOCO 01">BLOCO 01</option>
+                                        <option value="BLOCO 02">BLOCO 02</option>
+                                        <option value="BLOCO 03">BLOCO 03</option>
+                                        <option value="BLOCO 04">BLOCO 04</option>
+                                        <option value="BLOCO 05">BLOCO 05</option>
+                                        <option value="BLOCO 06">BLOCO 06</option>
+                                        <option value="BLOCO 07">BLOCO 07</option>
+                                        <option value="BLOCO 08">BLOCO 08</option>
+                                        <option value="BLOCO 09">BLOCO 09</option>
+                                        <option value="BLOCO 10">BLOCO 10</option>
+                                        <option value="BLOCO 11">BLOCO 11</option>
+                                        <option value="BLOCO 12">BLOCO 12</option>
+                                        <option value="BLOCO 13">BLOCO 13</option>
+                                        <option value="BLOCO 14">BLOCO 14</option>
+                                        <option value="BLOCO 15">BLOCO 15</option>
+                                        <option value="ÁREA GERAL">ÁREA GERAL</option>
                                     </select>
                                 </div>
                             </div>
@@ -264,7 +269,7 @@
                 </div>
             </div>
 
-            <!-- Listagem principal (Com botões de edição) -->
+            <!-- Listagem principal -->
             <div class="lg:col-span-8">
                 <div class="flex items-center justify-between mb-6 px-2">
                     <h3 class="font-black text-slate-400 uppercase text-xs tracking-[0.2em]">Histórico de Atividades</h3>
@@ -284,7 +289,7 @@
         </div>
     </div>
 
-    <!-- ÁREA DE EXPORTAÇÃO (FORMATO RELATÓRIO LIMPO) -->
+    <!-- ÁREA DE EXPORTAÇÃO -->
     <div id="exportArea">
         <div class="header-bg p-10 text-white flex justify-between items-center">
             <div>
@@ -297,23 +302,14 @@
         </div>
         
         <div class="p-12 bg-white">
-            <!-- Estatística de Topo -->
             <div class="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200 mb-12 text-center relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-2 bg-emerald-500"></div>
                 <span class="block text-xs font-black text-slate-400 uppercase tracking-[0.4em] mb-3">Total de Operações Registradas</span>
                 <span id="exportCount" class="text-7xl font-black text-slate-900 tracking-tighter">0</span>
             </div>
 
-            <div id="exportList" class="grid grid-cols-1 gap-8">
-                <!-- Cards em ordem alfabética aqui -->
-            </div>
+            <div id="exportList" class="grid grid-cols-1 gap-8"></div>
             
-            <!-- Assinaturas -->
-            <div class="mt-20 flex justify-around items-end">
-                <div class="signature-line">Assinatura Encarregado</div>
-                <div class="signature-line">Assinatura Operador</div>
-            </div>
-
             <div class="mt-20 pt-10 border-t border-slate-100 text-center">
                 <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.6em]">SPG • CONTROLE INTEGRADO • OÁSIS</p>
             </div>
@@ -332,8 +328,22 @@
         const formTitle = document.getElementById('formTitle');
         const submitBtn = document.getElementById('submitBtn');
         const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const opSelect = document.getElementById('operadorSelect');
+        const opOutroCont = document.getElementById('outroOperadorContainer');
+        const opOutroInput = document.getElementById('operadorOutro');
         
         let registros = [];
+
+        function toggleOutroOperador() {
+            if (opSelect.value === 'OUTRO') {
+                opOutroCont.classList.remove('hidden');
+                opOutroInput.setAttribute('required', 'true');
+            } else {
+                opOutroCont.classList.add('hidden');
+                opOutroInput.removeAttribute('required');
+                opOutroInput.value = '';
+            }
+        }
 
         function getWeek(d) {
             d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -379,6 +389,8 @@
             const statusVal = document.getElementById('status').value;
             const currentEditId = editIdInput.value;
             
+            let finalOperador = opSelect.value === 'OUTRO' ? opOutroInput.value.toUpperCase() : opSelect.value;
+            
             let statusClass = "card-operacional";
             let badgeClass = "badge-operacional";
 
@@ -394,8 +406,8 @@
                 id: currentEditId ? parseInt(currentEditId) : Date.now(),
                 dataIso: dataInput.value,
                 data: dataInput.value.split('-').reverse().join('/'),
-                operador: document.getElementById('operador').value.toUpperCase(),
-                bloco: document.getElementById('bloco').value.toUpperCase(),
+                operador: finalOperador,
+                bloco: document.getElementById('bloco').value,
                 equip: document.getElementById('equipamento').value,
                 inicio: hInicio.value,
                 fim: hFim.value,
@@ -418,6 +430,7 @@
 
         function resetForm() {
             document.getElementById('rocadeiraForm').reset();
+            opOutroCont.classList.add('hidden');
             editIdInput.value = "";
             formTitle.innerHTML = `<i class="fas fa-plus-circle text-emerald-500 mr-3 text-2xl"></i> Novo Registro`;
             submitBtn.innerHTML = `<i class="fas fa-save"></i> <span>Registrar Leitura</span>`;
@@ -432,12 +445,18 @@
 
             editIdInput.value = reg.id;
             dataInput.value = reg.dataIso;
-            document.getElementById('operador').value = reg.operador;
-            document.getElementById('equipamento').value = reg.equip;
             
-            const blocoSelect = document.getElementById('bloco');
-            blocoSelect.value = Array.from(blocoSelect.options).find(o => o.value.toUpperCase() === reg.bloco)?.value || "Área Geral";
+            if (['EDUARDO', 'MESSIAS'].includes(reg.operador)) {
+                opSelect.value = reg.operador;
+                opOutroCont.classList.add('hidden');
+            } else {
+                opSelect.value = 'OUTRO';
+                opOutroCont.classList.remove('hidden');
+                opOutroInput.value = reg.operador;
+            }
 
+            document.getElementById('equipamento').value = reg.equip;
+            document.getElementById('bloco').value = reg.bloco;
             hInicio.value = reg.inicio;
             hFim.value = reg.fim;
             
@@ -457,23 +476,17 @@
             render();
         }
 
-        // Função principal de renderização que cuida de ambos os containers
         function render() {
             emptyState.classList.toggle('hidden', registros.length > 0);
             document.getElementById('totalBadge').innerText = registros.length;
             document.getElementById('exportCount').innerText = registros.length;
 
-            // Ordenação Alfabética por Bloco para o Relatório e Visualização
             const registrosOrdenados = [...registros].sort((a, b) => a.bloco.localeCompare(b.bloco));
 
-            // Render para TELA (Com botões)
             cardsGrid.innerHTML = registrosOrdenados.map(r => generateCardHtml(r, true)).join('');
-            
-            // Render para EXPORTAÇÃO (Sem botões)
             exportList.innerHTML = registrosOrdenados.map(r => generateCardHtml(r, false)).join('');
         }
 
-        // Helper para gerar o HTML do card
         function generateCardHtml(r, showActions) {
             const actionButtons = showActions ? `
                 <div class="flex space-x-3 mr-3">
