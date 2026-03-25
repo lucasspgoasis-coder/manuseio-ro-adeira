@@ -25,30 +25,37 @@
             border-bottom: 4px solid #02261c;
         }
 
-        /* Estilos da Área de Exportação */
+        /* Estilos da Área de Exportação (Histórico PDF/JPG) */
         #exportArea {
             position: absolute;
             left: -9999px;
             top: -9999px;
-            width: 1000px;
+            width: 1100px; 
             background-color: #f8fafc;
             min-height: 1400px;
         }
 
         .export-header {
             background-color: #064e3b;
-            padding: 60px 50px;
+            padding: 80px 60px;
             color: white;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
+        .logo-export {
+            width: 280px;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));
+        }
+
         .export-card {
             background: white;
             border-radius: 35px;
-            padding: 35px;
-            margin-bottom: 25px;
+            padding: 40px;
+            margin-bottom: 30px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             border: 1px solid #f1f5f9;
         }
@@ -56,7 +63,7 @@
         .export-data-box {
             background: #f8fafc;
             border-radius: 20px;
-            padding: 15px 20px;
+            padding: 20px 25px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -82,6 +89,8 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
         }
+        
+        .card-base:hover { transform: translateY(-3px); box-shadow: 0 15px 30px -10px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body class="min-h-screen pb-16">
@@ -118,7 +127,6 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- Formulário -->
             <div class="lg:col-span-4">
                 <div class="bg-white rounded-[1.5rem] p-6 border border-slate-200 shadow-xl sticky top-6">
                     <div class="flex items-center justify-between mb-6">
@@ -161,7 +169,7 @@
                                     </select>
                                 </div>
                                 <div id="outroOperadorContainer" class="mt-2 hidden">
-                                    <input type="text" id="operadorOutro" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold uppercase text-sm" placeholder="Nome do Operador">
+                                    <input type="text" id="operadorOutro" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold uppercase text-sm" placeholder="Nome">
                                 </div>
                             </div>
                             <div>
@@ -243,29 +251,28 @@
         </div>
     </div>
 
-    <!-- ÁREA DE EXPORTAÇÃO (Oculta) -->
+    <!-- ÁREA DE EXPORTAÇÃO (HISTÓRICO OCULTO) -->
     <div id="exportArea">
         <div class="export-header">
             <div>
-                <h1 class="text-4xl font-black uppercase tracking-tight">Relatório Diário • Manuseio Roçadeiras</h1>
-                <h2 class="text-2xl font-bold text-emerald-200/80">OÁSIS - CONTROLE OPERACIONAL</h2>
-                <div class="h-1.5 w-48 bg-emerald-400 my-6 rounded-full"></div>
-                <p id="exportMeta" class="text-xl font-bold tracking-wide">Data: --/--/---- • Semana --</p>
+                <h1 class="text-5xl font-black uppercase tracking-tight">Relatório Diário • Manuseio Roçadeiras</h1>
+                <h2 class="text-3xl font-bold text-emerald-200/80 mt-2">OÁSIS - CONTROLE OPERACIONAL</h2>
+                <div class="h-2 w-64 bg-emerald-400 my-8 rounded-full"></div>
+                <p id="exportMeta" class="text-2xl font-bold tracking-wide">Data: --/--/---- • Semana --</p>
             </div>
-            <img src="https://i.imgur.com/rB1Lk8y.png" class="w-32 h-32">
+            <img src="https://i.imgur.com/rB1Lk8y.png" class="logo-export">
         </div>
 
-        <div class="p-12">
-            <div id="exportListFull" class="space-y-8"></div>
+        <div class="p-16">
+            <div id="exportListFull" class="space-y-10"></div>
             
-            <div class="mt-20 pt-10 border-t border-slate-200 flex justify-between items-end">
+            <div class="mt-24 pt-12 border-t border-slate-200 flex justify-between items-end">
                 <div>
-                    <p class="text-slate-400 font-black uppercase text-[10px] tracking-widest">Resumo do Dia</p>
-                    <p id="resumoGeralExport" class="text-2xl font-black text-slate-800">Total: 0 Registros</p>
+                    <p class="text-slate-400 font-black uppercase text-xs tracking-widest mb-2">Resumo Consolidado</p>
+                    <p id="resumoGeralExport" class="text-3xl font-black text-slate-800">Total: 0 Registros</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-slate-400 font-black uppercase text-[10px] tracking-widest mb-4">Assinatura do Responsável</p>
-                    <div class="h-px w-64 bg-slate-300"></div>
+                    <!-- Assinatura removida conforme solicitação -->
                 </div>
             </div>
         </div>
@@ -366,7 +373,6 @@
             document.getElementById('emptyState').classList.toggle('hidden', registros.length > 0);
             document.getElementById('resumoGeralExport').innerText = `Total: ${registros.length} Registros`;
 
-            // Agrupamento Inteligente
             const agrupados = {};
             registros.forEach(r => {
                 const key = `${r.dataIso}-${r.operador}-${r.bloco}-${r.equip}`;
@@ -377,7 +383,7 @@
 
             const keysSorted = Object.keys(agrupados).sort((a,b) => b.localeCompare(a));
 
-            // Interface App
+            // View App
             grid.innerHTML = keysSorted.map(key => {
                 const { manha, tarde } = agrupados[key];
                 const main = manha || tarde;
@@ -388,21 +394,21 @@
                     <div class="bg-slate-50 px-6 py-3 border-b border-slate-100 flex justify-between items-center">
                         <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${main.data} • ${main.bloco}</span>
                         <div class="flex space-x-2">
-                             <button onclick="editarTurno('${key}', 'MANHÃ')" class="text-xs font-bold text-emerald-600 hover:underline">Edit Manhã</button>
-                             <button onclick="editarTurno('${key}', 'TARDE')" class="text-xs font-bold text-amber-600 hover:underline">Edit Tarde</button>
+                             <button onclick="editarTurno('${key}', 'MANHÃ')" class="text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 px-2 py-1 rounded">Edit Manhã</button>
+                             <button onclick="editarTurno('${key}', 'TARDE')" class="text-[10px] font-bold text-amber-600 hover:bg-amber-50 px-2 py-1 rounded">Edit Tarde</button>
                         </div>
                     </div>
                     <div class="p-6">
                         <div class="flex justify-between items-start mb-6">
                             <div>
                                 <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 mb-1">
-                                    <i class="fas fa-id-card"></i> Operador
+                                    <i class="fas fa-id-badge text-emerald-500"></i> Operador
                                 </p>
                                 <h3 class="text-2xl font-black text-slate-800 uppercase leading-none">${main.operador}</h3>
                                 <p class="text-sm font-bold text-slate-400 mt-2"><i class="fas fa-gas-pump mr-2"></i>${main.equip}</p>
                             </div>
                             <div class="text-right">
-                                <p class="text-[9px] font-black text-slate-300 uppercase">Tempo Acumulado</p>
+                                <p class="text-[9px] font-black text-slate-300 uppercase">Tempo Consolidado</p>
                                 <p class="text-2xl font-black text-emerald-600">${formatarTempo(totalMins)}h</p>
                             </div>
                         </div>
@@ -414,7 +420,7 @@
                                     <span class="text-[10px] font-black ${manha ? 'text-slate-700' : 'text-slate-400'} uppercase">Manhã</span>
                                 </div>
                                 <p class="text-lg font-black ${manha ? 'text-slate-800' : 'text-slate-300'}">${manha ? formatarTempo(manha.minutos)+'h' : '--:--'}</p>
-                                ${manha ? `<p class="text-[8px] font-bold text-slate-400 uppercase mt-1">${manha.horaInicio} às ${manha.horaFim}</p>` : ''}
+                                ${manha ? `<p class="text-[8px] font-bold text-slate-400 uppercase mt-1">${manha.horaInicio} ➔ ${manha.horaFim}</p>` : ''}
                             </div>
                             <div class="p-3 rounded-xl border ${tarde ? 'bg-white border-amber-100 shadow-sm' : 'bg-slate-50 border-dashed border-slate-200 opacity-60'}">
                                 <div class="flex items-center space-x-2 mb-2">
@@ -422,7 +428,7 @@
                                     <span class="text-[10px] font-black ${tarde ? 'text-slate-700' : 'text-slate-400'} uppercase">Tarde</span>
                                 </div>
                                 <p class="text-lg font-black ${tarde ? 'text-slate-800' : 'text-slate-300'}">${tarde ? formatarTempo(tarde.minutos)+'h' : '--:--'}</p>
-                                ${tarde ? `<p class="text-[8px] font-bold text-slate-400 uppercase mt-1">${tarde.horaInicio} às ${tarde.horaFim}</p>` : ''}
+                                ${tarde ? `<p class="text-[8px] font-bold text-slate-400 uppercase mt-1">${tarde.horaInicio} ➔ ${tarde.horaFim}</p>` : ''}
                             </div>
                         </div>
                     </div>
@@ -430,7 +436,7 @@
                 `;
             }).join('');
 
-            // Exportação Visual
+            // Export View (Histórico)
             exportList.innerHTML = keysSorted.map(key => {
                 const { manha, tarde } = agrupados[key];
                 const main = manha || tarde;
@@ -440,37 +446,39 @@
                 <div class="export-card">
                     <div class="flex justify-between items-start mb-8">
                         <div>
-                            <p class="text-emerald-700 font-black text-sm uppercase tracking-widest mb-4"><i class="fas fa-map-marker-alt mr-2"></i>LOCAL: ${main.bloco}</p>
-                            <div class="mb-2">
-                                <p class="text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <i class="fas fa-user-circle text-lg"></i> Operador Responsável
+                            <p class="text-emerald-700 font-black text-lg uppercase tracking-widest mb-4">
+                                <i class="fas fa-map-marker-alt mr-2"></i>LOCAL: ${main.bloco}
+                            </p>
+                            <div class="mb-4">
+                                <p class="text-slate-400 font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3 mb-2">
+                                    <i class="fas fa-user-circle text-2xl"></i> Operador Responsável
                                 </p>
                                 <h3 class="text-5xl font-black text-slate-900 uppercase tracking-tighter">${main.operador}</h3>
                             </div>
-                            <p class="text-xl font-bold text-slate-400 mt-2">${main.equip}</p>
+                            <p class="text-2xl font-bold text-slate-400 mt-2">${main.equip}</p>
                         </div>
-                        <div class="bg-emerald-50 p-6 rounded-[30px] text-right border border-emerald-100">
-                            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-1">Total do Dia</p>
+                        <div class="bg-emerald-50 p-8 rounded-[40px] text-right border border-emerald-100 shadow-sm">
+                            <p class="text-xs font-black text-emerald-600 uppercase tracking-[0.3em] mb-2">Horas Totais</p>
                             <p class="text-6xl font-black text-emerald-700">${formatarTempo(totalMins)}h</p>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-8">
-                        <div class="export-data-box" style="border-left: 10px solid #10b981;">
+                    <div class="grid grid-cols-2 gap-10">
+                        <div class="export-data-box" style="border-left: 12px solid #10b981;">
                             <div>
-                                <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Turno Manhã</p>
-                                <p class="text-3xl font-black text-slate-800">${manha ? formatarTempo(manha.minutos)+'h' : 'SEM REGISTRO'}</p>
-                                ${manha ? `<p class="text-sm font-bold text-emerald-600 mt-1">${manha.horaInicio} ➔ ${manha.horaFim}</p>` : ''}
+                                <p class="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Turno Manhã</p>
+                                <p class="text-4xl font-black text-slate-800">${manha ? formatarTempo(manha.minutos)+'h' : 'SEM REGISTRO'}</p>
+                                ${manha ? `<p class="text-lg font-bold text-emerald-600 mt-1">${manha.horaInicio} ➔ ${manha.horaFim}</p>` : ''}
                             </div>
-                            <i class="fas fa-sun text-emerald-100 text-5xl"></i>
+                            <i class="fas fa-sun text-emerald-100 text-6xl"></i>
                         </div>
-                        <div class="export-data-box" style="border-left: 10px solid #f59e0b;">
+                        <div class="export-data-box" style="border-left: 12px solid #f59e0b;">
                             <div>
-                                <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Turno Tarde</p>
-                                <p class="text-3xl font-black text-slate-800">${tarde ? formatarTempo(tarde.minutos)+'h' : 'SEM REGISTRO'}</p>
-                                ${tarde ? `<p class="text-sm font-bold text-amber-600 mt-1">${tarde.horaInicio} ➔ ${tarde.horaFim}</p>` : ''}
+                                <p class="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Turno Tarde</p>
+                                <p class="text-4xl font-black text-slate-800">${tarde ? formatarTempo(tarde.minutos)+'h' : 'SEM REGISTRO'}</p>
+                                ${tarde ? `<p class="text-lg font-bold text-amber-600 mt-1">${tarde.horaInicio} ➔ ${tarde.horaFim}</p>` : ''}
                             </div>
-                            <i class="fas fa-cloud-sun text-amber-100 text-5xl"></i>
+                            <i class="fas fa-cloud-sun text-amber-100 text-6xl"></i>
                         </div>
                     </div>
                 </div>
@@ -480,12 +488,12 @@
 
         function editarTurno(key, periodo) {
             const parts = key.split('-');
-            const dataIso = `${parts[0]}-${parts[1]}-${parts[2]}`;
+            const dIso = `${parts[0]}-${parts[1]}-${parts[2]}`;
             const op = parts[3];
             const bloco = parts[4];
             const equip = parts[5];
             
-            const r = registros.find(x => x.dataIso === dataIso && x.operador === op && x.bloco === bloco && x.equip === equip && x.periodo === periodo);
+            const r = registros.find(x => x.dataIso === dIso && x.operador === op && x.bloco === bloco && x.equip === equip && x.periodo === periodo);
             
             if(r) {
                 editIdInput.value = r.id;
@@ -506,15 +514,13 @@
                     document.getElementById('operadorOutro').value = r.operador;
                 }
             } else {
-                // Preencher para novo registro no mesmo bloco/operador
-                dataInput.value = dataIso;
+                dataInput.value = dIso;
                 periodoInput.value = periodo;
                 document.getElementById('bloco').value = bloco;
                 document.getElementById('equipamento').value = equip;
                 const opSelect = document.getElementById('operadorSelect');
-                if(['EDUARDO','MESSIAS'].includes(op)) {
-                    opSelect.value = op;
-                } else {
+                if(['EDUARDO','MESSIAS'].includes(op)) opSelect.value = op;
+                else {
                     opSelect.value = 'OUTRO';
                     document.getElementById('outroOperadorContainer').classList.remove('hidden');
                     document.getElementById('operadorOutro').value = op;
@@ -531,7 +537,7 @@
 
             if (tipo === 'jpg') {
                 const link = document.createElement('a');
-                link.download = `relatorio-rocadeira-${Date.now()}.jpg`;
+                link.download = `relatorio-rocadeiras-oasis.jpg`;
                 link.href = canvas.toDataURL('image/jpeg', 0.9);
                 link.click();
             } else {
@@ -541,7 +547,7 @@
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`relatorio-rocadeira-${Date.now()}.pdf`);
+                pdf.save(`relatorio-rocadeiras-oasis.pdf`);
             }
         }
 
@@ -549,12 +555,12 @@
             if (registros.length === 0) return;
             const dadosExcel = registros.map(r => ({
                 Data: r.data, Período: r.periodo, Operador: r.operador, Bloco: r.bloco,
-                Equipamento: r.equip, Início: r.horaInicio, Fim: r.horaFim, "Minutos": r.minutos, Status: r.status
+                Equipamento: r.equip, Início: r.horaInicio, Fim: r.horaFim, "Tempo (min)": r.minutos, Status: r.status
             }));
             const ws = XLSX.utils.json_to_sheet(dadosExcel);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Leituras");
-            XLSX.writeFile(wb, "relatorio_rocadeiras.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Dados");
+            XLSX.writeFile(wb, "historico_rocadeiras.xlsx");
         }
 
         function initDate() {
