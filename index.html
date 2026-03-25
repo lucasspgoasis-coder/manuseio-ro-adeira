@@ -44,17 +44,6 @@
             align-items: center;
         }
 
-        .section-divider {
-            background: #f1f5f9;
-            padding: 15px 30px;
-            border-radius: 20px;
-            margin: 40px 0 20px 0;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            border: 1px solid #e2e8f0;
-        }
-
         .export-card {
             background: white;
             border-radius: 35px;
@@ -63,18 +52,6 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             border: 1px solid #f1f5f9;
         }
-
-        .export-badge {
-            padding: 8px 24px;
-            border-radius: 12px;
-            font-weight: 900;
-            text-transform: uppercase;
-            font-size: 13px;
-        }
-
-        .badge-op { background: #10b981; color: white; }
-        .badge-manut { background: #f59e0b; color: white; }
-        .badge-ajuste { background: #ef4444; color: white; }
 
         .export-data-box {
             background: #f8fafc;
@@ -105,8 +82,6 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
         }
-        
-        .card-base:hover { transform: translateY(-2px); box-shadow: 0 12px 20px -5px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body class="min-h-screen pb-16">
@@ -186,7 +161,7 @@
                                     </select>
                                 </div>
                                 <div id="outroOperadorContainer" class="mt-2 hidden">
-                                    <input type="text" id="operadorOutro" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold uppercase text-sm" placeholder="Nome">
+                                    <input type="text" id="operadorOutro" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold uppercase text-sm" placeholder="Nome do Operador">
                                 </div>
                             </div>
                             <div>
@@ -257,7 +232,7 @@
                 </div>
             </div>
 
-            <!-- Listagem -->
+            <!-- Listagem Dinâmica -->
             <div class="lg:col-span-8">
                 <div id="cardsGrid" class="grid grid-cols-1 gap-6"></div>
                 <div id="emptyState" class="py-24 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-200">
@@ -268,11 +243,11 @@
         </div>
     </div>
 
-    <!-- ÁREA DE EXPORTAÇÃO -->
+    <!-- ÁREA DE EXPORTAÇÃO (Oculta) -->
     <div id="exportArea">
         <div class="export-header">
             <div>
-                <h1 class="text-4xl font-black uppercase tracking-tight">Relatório de Manuseio • Roçadeiras</h1>
+                <h1 class="text-4xl font-black uppercase tracking-tight">Relatório Diário • Manuseio Roçadeiras</h1>
                 <h2 class="text-2xl font-bold text-emerald-200/80">OÁSIS - CONTROLE OPERACIONAL</h2>
                 <div class="h-1.5 w-48 bg-emerald-400 my-6 rounded-full"></div>
                 <p id="exportMeta" class="text-xl font-bold tracking-wide">Data: --/--/---- • Semana --</p>
@@ -285,11 +260,11 @@
             
             <div class="mt-20 pt-10 border-t border-slate-200 flex justify-between items-end">
                 <div>
-                    <p class="text-slate-400 font-black uppercase text-[10px] tracking-widest">Resumo de Registros</p>
+                    <p class="text-slate-400 font-black uppercase text-[10px] tracking-widest">Resumo do Dia</p>
                     <p id="resumoGeralExport" class="text-2xl font-black text-slate-800">Total: 0 Registros</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-slate-400 font-black uppercase text-[10px] tracking-widest mb-4">Assinatura do Encarregado</p>
+                    <p class="text-slate-400 font-black uppercase text-[10px] tracking-widest mb-4">Assinatura do Responsável</p>
                     <div class="h-px w-64 bg-slate-300"></div>
                 </div>
             </div>
@@ -391,20 +366,18 @@
             document.getElementById('emptyState').classList.toggle('hidden', registros.length > 0);
             document.getElementById('resumoGeralExport').innerText = `Total: ${registros.length} Registros`;
 
-            // Agrupamento para unir turnos Manhã e Tarde
-            // Chave: Data + Operador + Bloco + Equipamento
+            // Agrupamento Inteligente
             const agrupados = {};
             registros.forEach(r => {
                 const key = `${r.dataIso}-${r.operador}-${r.bloco}-${r.equip}`;
                 if(!agrupados[key]) agrupados[key] = { manha: null, tarde: null };
-                
                 if(r.periodo === 'MANHÃ') agrupados[key].manha = r;
                 else agrupados[key].tarde = r;
             });
 
             const keysSorted = Object.keys(agrupados).sort((a,b) => b.localeCompare(a));
 
-            // Render no Navegador
+            // Interface App
             grid.innerHTML = keysSorted.map(key => {
                 const { manha, tarde } = agrupados[key];
                 const main = manha || tarde;
@@ -422,17 +395,19 @@
                     <div class="p-6">
                         <div class="flex justify-between items-start mb-6">
                             <div>
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 mb-1">
+                                    <i class="fas fa-id-card"></i> Operador
+                                </p>
                                 <h3 class="text-2xl font-black text-slate-800 uppercase leading-none">${main.operador}</h3>
-                                <p class="text-sm font-bold text-slate-400 mt-1"><i class="fas fa-gas-pump mr-2"></i>${main.equip}</p>
+                                <p class="text-sm font-bold text-slate-400 mt-2"><i class="fas fa-gas-pump mr-2"></i>${main.equip}</p>
                             </div>
                             <div class="text-right">
-                                <p class="text-[9px] font-black text-slate-300 uppercase">Tempo Total</p>
+                                <p class="text-[9px] font-black text-slate-300 uppercase">Tempo Acumulado</p>
                                 <p class="text-2xl font-black text-emerald-600">${formatarTempo(totalMins)}h</p>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
-                            <!-- Turno Manhã -->
                             <div class="p-3 rounded-xl border ${manha ? 'bg-white border-emerald-100 shadow-sm' : 'bg-slate-50 border-dashed border-slate-200 opacity-60'}">
                                 <div class="flex items-center space-x-2 mb-2">
                                     <i class="fas fa-sun ${manha ? 'text-emerald-500' : 'text-slate-300'} text-xs"></i>
@@ -441,7 +416,6 @@
                                 <p class="text-lg font-black ${manha ? 'text-slate-800' : 'text-slate-300'}">${manha ? formatarTempo(manha.minutos)+'h' : '--:--'}</p>
                                 ${manha ? `<p class="text-[8px] font-bold text-slate-400 uppercase mt-1">${manha.horaInicio} às ${manha.horaFim}</p>` : ''}
                             </div>
-                            <!-- Turno Tarde -->
                             <div class="p-3 rounded-xl border ${tarde ? 'bg-white border-amber-100 shadow-sm' : 'bg-slate-50 border-dashed border-slate-200 opacity-60'}">
                                 <div class="flex items-center space-x-2 mb-2">
                                     <i class="fas fa-cloud-sun ${tarde ? 'text-amber-500' : 'text-slate-300'} text-xs"></i>
@@ -456,7 +430,7 @@
                 `;
             }).join('');
 
-            // Render Exportação
+            // Exportação Visual
             exportList.innerHTML = keysSorted.map(key => {
                 const { manha, tarde } = agrupados[key];
                 const main = manha || tarde;
@@ -466,12 +440,17 @@
                 <div class="export-card">
                     <div class="flex justify-between items-start mb-8">
                         <div>
-                            <p class="text-emerald-700 font-black text-sm uppercase tracking-widest mb-2"><i class="fas fa-map-marker-alt mr-2"></i>LOCAL: ${main.bloco}</p>
-                            <h3 class="text-5xl font-black text-slate-900 uppercase tracking-tighter">${main.operador}</h3>
+                            <p class="text-emerald-700 font-black text-sm uppercase tracking-widest mb-4"><i class="fas fa-map-marker-alt mr-2"></i>LOCAL: ${main.bloco}</p>
+                            <div class="mb-2">
+                                <p class="text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <i class="fas fa-user-circle text-lg"></i> Operador Responsável
+                                </p>
+                                <h3 class="text-5xl font-black text-slate-900 uppercase tracking-tighter">${main.operador}</h3>
+                            </div>
                             <p class="text-xl font-bold text-slate-400 mt-2">${main.equip}</p>
                         </div>
                         <div class="bg-emerald-50 p-6 rounded-[30px] text-right border border-emerald-100">
-                            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-1">Total Geral</p>
+                            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-1">Total do Dia</p>
                             <p class="text-6xl font-black text-emerald-700">${formatarTempo(totalMins)}h</p>
                         </div>
                     </div>
@@ -500,20 +479,13 @@
         }
 
         function editarTurno(key, periodo) {
-            // Busca o registro específico dentro de todos os registros
             const parts = key.split('-');
-            const data = parts[0]+'-'+parts[1]+'-'+parts[2];
+            const dataIso = `${parts[0]}-${parts[1]}-${parts[2]}`;
             const op = parts[3];
             const bloco = parts[4];
             const equip = parts[5];
             
-            const r = registros.find(x => 
-                x.dataIso === data && 
-                x.operador === op && 
-                x.bloco === bloco && 
-                x.equip === equip && 
-                x.periodo === periodo
-            );
+            const r = registros.find(x => x.dataIso === dataIso && x.operador === op && x.bloco === bloco && x.equip === equip && x.periodo === periodo);
             
             if(r) {
                 editIdInput.value = r.id;
@@ -533,16 +505,12 @@
                     document.getElementById('outroOperadorContainer').classList.remove('hidden');
                     document.getElementById('operadorOutro').value = r.operador;
                 }
-                
-                calcularTempoTotal();
-                window.scrollTo({top:0, behavior:'smooth'});
             } else {
-                // Caso não exista o registro ainda, preenche o form com os dados do outro turno para facilitar
-                dataInput.value = data;
+                // Preencher para novo registro no mesmo bloco/operador
+                dataInput.value = dataIso;
                 periodoInput.value = periodo;
                 document.getElementById('bloco').value = bloco;
                 document.getElementById('equipamento').value = equip;
-                
                 const opSelect = document.getElementById('operadorSelect');
                 if(['EDUARDO','MESSIAS'].includes(op)) {
                     opSelect.value = op;
@@ -551,19 +519,15 @@
                     document.getElementById('outroOperadorContainer').classList.remove('hidden');
                     document.getElementById('operadorOutro').value = op;
                 }
-                window.scrollTo({top:0, behavior:'smooth'});
             }
+            calcularTempoTotal();
+            window.scrollTo({top:0, behavior:'smooth'});
         }
 
         async function exportar(tipo) {
             if(registros.length === 0) return;
             const area = document.getElementById('exportArea');
-            const canvas = await html2canvas(area, { 
-                scale: 2, 
-                useCORS: true, 
-                backgroundColor: '#f8fafc',
-                logging: false
-            });
+            const canvas = await html2canvas(area, { scale: 2, useCORS: true, backgroundColor: '#f8fafc' });
 
             if (tipo === 'jpg') {
                 const link = document.createElement('a');
@@ -584,20 +548,13 @@
         function exportarExcel() {
             if (registros.length === 0) return;
             const dadosExcel = registros.map(r => ({
-                Data: r.data,
-                Período: r.periodo,
-                Operador: r.operador,
-                Bloco: r.bloco,
-                Equipamento: r.equip,
-                Início: r.horaInicio,
-                Fim: r.horaFim,
-                "Minutos Totais": r.minutos,
-                Status: r.status
+                Data: r.data, Período: r.periodo, Operador: r.operador, Bloco: r.bloco,
+                Equipamento: r.equip, Início: r.horaInicio, Fim: r.horaFim, "Minutos": r.minutos, Status: r.status
             }));
             const ws = XLSX.utils.json_to_sheet(dadosExcel);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Relatório");
-            XLSX.writeFile(wb, "dados_rocadeiras.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Leituras");
+            XLSX.writeFile(wb, "relatorio_rocadeiras.xlsx");
         }
 
         function initDate() {
