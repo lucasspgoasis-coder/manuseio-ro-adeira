@@ -162,25 +162,32 @@
                                 <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1">Operador</label>
                                 <div class="input-group-icon">
                                     <i class="fas fa-user"></i>
-                                    <select id="operadorSelect" required onchange="toggleOutroOperador()" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold bg-white text-sm">
+                                    <select id="operadorSelect" required onchange="toggleOutro('operadorSelect', 'outroOperadorContainer')" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold bg-white text-sm">
                                         <option value="EDUARDO">EDUARDO</option>
                                         <option value="MESSIAS">MESSIAS</option>
                                         <option value="OUTRO">OUTRO...</option>
                                     </select>
                                 </div>
                                 <div id="outroOperadorContainer" class="mt-2 hidden">
-                                    <input type="text" id="operadorOutro" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold uppercase text-sm" placeholder="Nome">
+                                    <input type="text" id="operadorOutro" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold uppercase text-sm" placeholder="Nome do Operador">
                                 </div>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1">Equipamento</label>
                                 <div class="input-group-icon">
                                     <i class="fas fa-gas-pump"></i>
-                                    <select id="equipamento" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold bg-white text-sm">
-                                        <option value="Roçadeira 01">Roçadeira 01</option>
-                                        <option value="Roçadeira 02">Roçadeira 02</option>
-                                        <option value="Roçadeira 03">Roçadeira 03</option>
+                                    <select id="equipamentoSelect" required onchange="toggleOutro('equipamentoSelect', 'outroEquipamentoContainer')" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold bg-white text-sm">
+                                        <script>
+                                            for(let i=1; i<=15; i++) {
+                                                let num = String(i).padStart(2, '0');
+                                                document.write(`<option value="Roçadeira ${num}">Roçadeira ${num}</option>`);
+                                            }
+                                        </script>
+                                        <option value="OUTRO">OUTRO...</option>
                                     </select>
+                                </div>
+                                <div id="outroEquipamentoContainer" class="mt-2 hidden">
+                                    <input type="text" id="equipamentoOutro" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold uppercase text-sm" placeholder="Qual Equipamento?">
                                 </div>
                             </div>
                         </div>
@@ -189,7 +196,10 @@
                             <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1">Localização</label>
                             <div class="input-group-icon">
                                 <i class="fas fa-map-marker-alt"></i>
-                                <select id="bloco" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold bg-white text-sm">
+                                <select id="blocoSelect" required onchange="toggleOutro('blocoSelect', 'outroBlocoContainer')" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold bg-white text-sm">
+                                    <option value="BLOCO A">BLOCO A</option>
+                                    <option value="BLOCO B">BLOCO B</option>
+                                    <option value="BLOCO C">BLOCO C</option>
                                     <script>
                                         for(let i=1; i<=15; i++) {
                                             let b = `BLOCO ${String(i).padStart(2, '0')}`;
@@ -197,7 +207,11 @@
                                         }
                                     </script>
                                     <option value="ÁREA GERAL">ÁREA GERAL</option>
+                                    <option value="OUTRO">OUTRO...</option>
                                 </select>
+                            </div>
+                            <div id="outroBlocoContainer" class="mt-2 hidden">
+                                <input type="text" id="blocoOutro" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold uppercase text-sm" placeholder="Qual Bloco/Área?">
                             </div>
                         </div>
 
@@ -271,9 +285,6 @@
                     <p class="text-slate-400 font-black uppercase text-xs tracking-widest mb-2">Resumo Consolidado</p>
                     <p id="resumoGeralExport" class="text-3xl font-black text-slate-800">Total: 0 Registros</p>
                 </div>
-                <div class="text-right">
-                    <!-- Assinatura removida conforme solicitação -->
-                </div>
             </div>
         </div>
     </div>
@@ -287,10 +298,10 @@
         const displayTempo = document.getElementById('displayTempoTotal');
         const editIdInput = document.getElementById('editId');
 
-        function toggleOutroOperador() {
-            const opSelect = document.getElementById('operadorSelect');
-            const opOutroCont = document.getElementById('outroOperadorContainer');
-            opOutroCont.classList.toggle('hidden', opSelect.value !== 'OUTRO');
+        function toggleOutro(selectId, containerId) {
+            const select = document.getElementById(selectId);
+            const container = document.getElementById(containerId);
+            container.classList.toggle('hidden', select.value !== 'OUTRO');
         }
 
         function getWeek(d) {
@@ -331,8 +342,11 @@
 
         document.getElementById('rocadeiraForm').addEventListener('submit', e => {
             e.preventDefault();
-            const opSelect = document.getElementById('operadorSelect');
-            const opOutro = document.getElementById('operadorOutro');
+            
+            const opSel = document.getElementById('operadorSelect');
+            const eqSel = document.getElementById('equipamentoSelect');
+            const blSel = document.getElementById('blocoSelect');
+            
             const tempo = calcularTempoTotal();
             
             const reg = {
@@ -340,9 +354,9 @@
                 periodo: periodoInput.value,
                 dataIso: dataInput.value,
                 data: dataInput.value.split('-').reverse().join('/'),
-                operador: opSelect.value === 'OUTRO' ? opOutro.value.toUpperCase() : opSelect.value,
-                bloco: document.getElementById('bloco').value.toUpperCase(),
-                equip: document.getElementById('equipamento').value,
+                operador: opSel.value === 'OUTRO' ? document.getElementById('operadorOutro').value.toUpperCase() : opSel.value,
+                bloco: blSel.value === 'OUTRO' ? document.getElementById('blocoOutro').value.toUpperCase() : blSel.value.toUpperCase(),
+                equip: eqSel.value === 'OUTRO' ? document.getElementById('equipamentoOutro').value : eqSel.value,
                 horaInicio: hInicio.value,
                 horaFim: hFim.value,
                 minutos: tempo.minutos,
@@ -363,6 +377,9 @@
             document.getElementById('rocadeiraForm').reset();
             editIdInput.value = "";
             displayTempo.innerText = "00:00h";
+            document.getElementById('outroOperadorContainer').classList.add('hidden');
+            document.getElementById('outroEquipamentoContainer').classList.add('hidden');
+            document.getElementById('outroBlocoContainer').classList.add('hidden');
             initDate();
         }
 
@@ -383,7 +400,6 @@
 
             const keysSorted = Object.keys(agrupados).sort((a,b) => b.localeCompare(a));
 
-            // View App
             grid.innerHTML = keysSorted.map(key => {
                 const { manha, tarde } = agrupados[key];
                 const main = manha || tarde;
@@ -436,7 +452,6 @@
                 `;
             }).join('');
 
-            // Export View (Histórico)
             exportList.innerHTML = keysSorted.map(key => {
                 const { manha, tarde } = agrupados[key];
                 const main = manha || tarde;
@@ -499,31 +514,42 @@
                 editIdInput.value = r.id;
                 dataInput.value = r.dataIso;
                 periodoInput.value = r.periodo;
-                document.getElementById('bloco').value = r.bloco;
-                document.getElementById('equipamento').value = r.equip;
                 hInicio.value = r.horaInicio;
                 hFim.value = r.horaFim;
-                
-                const opSelect = document.getElementById('operadorSelect');
+
+                // Set Operador
+                const opSel = document.getElementById('operadorSelect');
                 if(['EDUARDO','MESSIAS'].includes(r.operador)) {
-                    opSelect.value = r.operador;
+                    opSel.value = r.operador;
                     document.getElementById('outroOperadorContainer').classList.add('hidden');
                 } else {
-                    opSelect.value = 'OUTRO';
+                    opSel.value = 'OUTRO';
                     document.getElementById('outroOperadorContainer').classList.remove('hidden');
                     document.getElementById('operadorOutro').value = r.operador;
                 }
-            } else {
-                dataInput.value = dIso;
-                periodoInput.value = periodo;
-                document.getElementById('bloco').value = bloco;
-                document.getElementById('equipamento').value = equip;
-                const opSelect = document.getElementById('operadorSelect');
-                if(['EDUARDO','MESSIAS'].includes(op)) opSelect.value = op;
-                else {
-                    opSelect.value = 'OUTRO';
-                    document.getElementById('outroOperadorContainer').classList.remove('hidden');
-                    document.getElementById('operadorOutro').value = op;
+
+                // Set Equipamento
+                const eqSel = document.getElementById('equipamentoSelect');
+                let eqFound = Array.from(eqSel.options).some(opt => opt.value === r.equip);
+                if(eqFound && r.equip !== 'OUTRO') {
+                    eqSel.value = r.equip;
+                    document.getElementById('outroEquipamentoContainer').classList.add('hidden');
+                } else {
+                    eqSel.value = 'OUTRO';
+                    document.getElementById('outroEquipamentoContainer').classList.remove('hidden');
+                    document.getElementById('equipamentoOutro').value = r.equip;
+                }
+
+                // Set Bloco
+                const blSel = document.getElementById('blocoSelect');
+                let blFound = Array.from(blSel.options).some(opt => opt.value === r.bloco);
+                if(blFound && r.bloco !== 'OUTRO') {
+                    blSel.value = r.bloco;
+                    document.getElementById('outroBlocoContainer').classList.add('hidden');
+                } else {
+                    blSel.value = 'OUTRO';
+                    document.getElementById('outroBlocoContainer').classList.remove('hidden');
+                    document.getElementById('blocoOutro').value = r.bloco;
                 }
             }
             calcularTempoTotal();
