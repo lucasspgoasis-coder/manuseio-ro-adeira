@@ -177,12 +177,21 @@
                                 <div class="input-group-icon">
                                     <i class="fas fa-gas-pump"></i>
                                     <select id="equipamentoSelect" required onchange="toggleOutro('equipamentoSelect', 'outroEquipamentoContainer')" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold bg-white text-sm">
-                                        <script>
-                                            for(let i=1; i<=15; i++) {
-                                                let num = String(i).padStart(2, '0');
-                                                document.write(`<option value="Roçadeira ${num}">Roçadeira ${num}</option>`);
-                                            }
-                                        </script>
+                                        <option value="Roçadeira 01">Roçadeira 01</option>
+                                        <option value="Roçadeira 02">Roçadeira 02</option>
+                                        <option value="Roçadeira 03">Roçadeira 03</option>
+                                        <option value="Roçadeira 04">Roçadeira 04</option>
+                                        <option value="Roçadeira 05">Roçadeira 05</option>
+                                        <option value="Roçadeira 06">Roçadeira 06</option>
+                                        <option value="Roçadeira 07">Roçadeira 07</option>
+                                        <option value="Roçadeira 08">Roçadeira 08</option>
+                                        <option value="Roçadeira 09">Roçadeira 09</option>
+                                        <option value="Roçadeira 10">Roçadeira 10</option>
+                                        <option value="Roçadeira 11">Roçadeira 11</option>
+                                        <option value="Roçadeira 12">Roçadeira 12</option>
+                                        <option value="Roçadeira 13">Roçadeira 13</option>
+                                        <option value="Roçadeira 14">Roçadeira 14</option>
+                                        <option value="Roçadeira 15">Roçadeira 15</option>
                                         <option value="OUTRO">OUTRO...</option>
                                     </select>
                                 </div>
@@ -200,12 +209,21 @@
                                     <option value="BLOCO A">BLOCO A</option>
                                     <option value="BLOCO B">BLOCO B</option>
                                     <option value="BLOCO C">BLOCO C</option>
-                                    <script>
-                                        for(let i=1; i<=15; i++) {
-                                            let b = `BLOCO ${String(i).padStart(2, '0')}`;
-                                            document.write(`<option value="${b}">${b}</option>`);
-                                        }
-                                    </script>
+                                    <option value="BLOCO 01">BLOCO 01</option>
+                                    <option value="BLOCO 02">BLOCO 02</option>
+                                    <option value="BLOCO 03">BLOCO 03</option>
+                                    <option value="BLOCO 04">BLOCO 04</option>
+                                    <option value="BLOCO 05">BLOCO 05</option>
+                                    <option value="BLOCO 06">BLOCO 06</option>
+                                    <option value="BLOCO 07">BLOCO 07</option>
+                                    <option value="BLOCO 08">BLOCO 08</option>
+                                    <option value="BLOCO 09">BLOCO 09</option>
+                                    <option value="BLOCO 10">BLOCO 10</option>
+                                    <option value="BLOCO 11">BLOCO 11</option>
+                                    <option value="BLOCO 12">BLOCO 12</option>
+                                    <option value="BLOCO 13">BLOCO 13</option>
+                                    <option value="BLOCO 14">BLOCO 14</option>
+                                    <option value="BLOCO 15">BLOCO 15</option>
                                     <option value="ÁREA GERAL">ÁREA GERAL</option>
                                     <option value="OUTRO">OUTRO...</option>
                                 </select>
@@ -390,6 +408,8 @@
             document.getElementById('emptyState').classList.toggle('hidden', registros.length > 0);
             document.getElementById('resumoGeralExport').innerText = `Total: ${registros.length} Registros`;
 
+            // AGRUPAMENTO: Agrupamos por Data, Operador, Bloco e Equipamento
+            // Mas agora tratamos Bloco A, B e C como chaves únicas separadas
             const agrupados = {};
             registros.forEach(r => {
                 const key = `${r.dataIso}-${r.operador}-${r.bloco}-${r.equip}`;
@@ -398,7 +418,22 @@
                 else agrupados[key].tarde = r;
             });
 
-            const keysSorted = Object.keys(agrupados).sort((a,b) => b.localeCompare(a));
+            // ORDENAÇÃO ALFABÉTICA:
+            // Ordenamos primeiro pelo Operador e depois pelo Bloco
+            const keysSorted = Object.keys(agrupados).sort((a, b) => {
+                const partsA = a.split('-'); // 0: data, 1: op, 2: bloco, 3: equip
+                const partsB = b.split('-');
+                
+                // Primeiro critério: Operador (Índice 1 no split)
+                if (partsA[1] < partsB[1]) return -1;
+                if (partsA[1] > partsB[1]) return 1;
+                
+                // Segundo critério: Bloco (Índice 2 no split)
+                if (partsA[2] < partsB[2]) return -1;
+                if (partsA[2] > partsB[2]) return 1;
+
+                return 0;
+            });
 
             grid.innerHTML = keysSorted.map(key => {
                 const { manha, tarde } = agrupados[key];
