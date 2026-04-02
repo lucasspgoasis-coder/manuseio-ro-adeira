@@ -3,329 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leitura Diária de Manuseio da Roçadeira - SPG Oásis</title>
+    <title>Controle de Roçadeiras - SPG Oásis</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- Bibliotecas para Exportação -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Biblioteca para gerar imagem JPEG -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8;
-        }
-
-        .header-bg {
-            background: linear-gradient(135deg, #054a36 0%, #033023 100%);
-            border-bottom: 4px solid #02261c;
-        }
-
-        /* Estilos da Área de Exportação (Histórico PDF/JPG) */
-        #exportArea {
-            position: absolute;
-            left: -9999px;
-            top: -9999px;
-            width: 1100px; 
-            background-color: #f8fafc;
-            min-height: 1400px;
-        }
-
-        .export-header {
-            background-color: #064e3b;
-            padding: 80px 60px;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo-export {
-            width: 280px;
-            height: auto;
-            object-fit: contain;
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));
-        }
-
-        .export-card {
-            background: white;
-            border-radius: 35px;
-            padding: 40px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            border: 1px solid #f1f5f9;
-        }
-
-        .export-data-box {
-            background: #f8fafc;
-            border-radius: 20px;
-            padding: 20px 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        /* Estilos do Formulário */
-        .input-group-icon { position: relative; }
-        .input-group-icon i {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #94a3b8;
-            font-size: 14px;
-        }
-        .input-group-icon input, .input-group-icon select { padding-left: 46px !important; }
-
-        .card-base {
-            border-radius: 1.5rem;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-        }
-        
-        .card-base:hover { transform: translateY(-3px); box-shadow: 0 15px 30px -10px rgba(0,0,0,0.1); }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .header-bg { background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); }
+        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
+        .modal-overlay { background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #10b981; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .input-focus { transition: all 0.2s; border: 2px solid transparent; }
+        .input-focus:focus { border-color: #10b981; background-color: white; }
     </style>
 </head>
-<body class="min-h-screen pb-16">
+<body class="min-h-screen pb-20">
 
-    <header class="header-bg text-white shadow-2xl mb-8">
-        <div class="max-w-[1400px] mx-auto px-6 py-6">
-            <div class="flex justify-between items-center">
-                <div class="flex-grow">
-                    <div class="flex items-center space-x-3">
-                        <div class="bg-emerald-500/20 p-2 rounded-lg">
-                            <i class="fas fa-tractor text-emerald-400 text-2xl"></i>
-                        </div>
-                        <h1 class="text-xl md:text-2xl font-black tracking-tight uppercase">Leitura de Roçadeiras</h1>
-                    </div>
-                    <h2 class="text-lg font-medium text-emerald-100/80 mt-1">Oásis • Sistema de Gestão</h2>
+    <header class="header-bg text-white py-6 px-6 shadow-xl mb-8">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="bg-emerald-500/20 p-2 md:p-3 rounded-2xl hidden sm:block">
+                    <i class="fas fa-tools text-2xl md:text-3xl text-emerald-400"></i>
                 </div>
-                <img src="https://i.imgur.com/rB1Lk8y.png" alt="Logo" class="w-20 h-20 object-contain">
+                <div>
+                    <h1 class="text-lg md:text-2xl font-black uppercase tracking-tight leading-tight">Gestão de Roçadeiras</h1>
+                    <p class="text-emerald-200/70 font-medium text-xs md:text-sm">Oásis • Controle de Operações</p>
+                </div>
+            </div>
+            <div class="flex-shrink-0">
+                <img src="https://i.imgur.com/rB1Lk8y.png" alt="Logo Oásis" class="h-12 md:h-16 drop-shadow-md object-contain">
             </div>
         </div>
     </header>
 
-    <div class="max-w-[1400px] mx-auto px-4 md:px-8">
-        <!-- Botões de Ação -->
-        <div class="flex flex-wrap gap-3 mb-8 justify-end">
-            <button onclick="exportarExcel()" class="bg-white hover:bg-emerald-50 text-emerald-700 font-bold py-3 px-5 rounded-xl shadow-sm border border-emerald-100 flex items-center space-x-2 text-xs uppercase">
-                <i class="fas fa-file-excel"></i><span>Planilha</span>
-            </button>
-            <button onclick="exportar('jpg')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-5 rounded-xl shadow-sm flex items-center space-x-2 text-xs uppercase">
-                <i class="fab fa-whatsapp"></i><span>Exportar JPG</span>
-            </button>
-            <button onclick="exportar('pdf')" class="bg-slate-900 hover:bg-black text-white font-bold py-3 px-5 rounded-xl shadow-sm flex items-center space-x-2 text-xs uppercase">
-                <i class="fas fa-file-pdf"></i><span>Exportar PDF</span>
-            </button>
-        </div>
-
+    <main class="max-w-6xl mx-auto px-4">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div class="lg:col-span-4">
-                <div class="bg-white rounded-[1.5rem] p-6 border border-slate-200 shadow-xl sticky top-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 id="formTitle" class="text-lg font-black text-slate-800 uppercase tracking-tight">Novo Registro</h2>
-                        <i class="fas fa-plus-circle text-emerald-500"></i>
+            
+            <!-- Formulário -->
+            <div class="lg:col-span-5">
+                <div class="bg-white rounded-3xl p-8 card-shadow border border-slate-100">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-xl font-bold text-slate-800 uppercase tracking-tight">Novo Registro</h2>
+                        <button onclick="resetForm()" class="text-xs font-bold text-slate-400 hover:text-red-500 flex items-center gap-1 uppercase transition-colors">
+                            <i class="fas fa-undo"></i> Limpar
+                        </button>
                     </div>
-                    
-                    <form id="rocadeiraForm" class="space-y-5">
-                        <input type="hidden" id="editId" value="">
-                        
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1">Data</label>
-                                <div class="input-group-icon">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    <input type="date" id="data" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-emerald-500">
-                                </div>
+
+                    <form id="mainForm" class="space-y-5">
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-[11px] font-black text-slate-400 uppercase ml-1">Data</label>
+                                <input type="date" id="formData" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none input-focus">
                             </div>
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1">Período</label>
-                                <div class="input-group-icon">
-                                    <i class="fas fa-clock"></i>
-                                    <select id="periodo" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-sm bg-white outline-none focus:border-emerald-500">
-                                        <option value="MANHÃ">MANHÃ</option>
-                                        <option value="TARDE">TARDE</option>
-                                    </select>
-                                </div>
+                            
+                            <div class="space-y-1">
+                                <label class="text-[11px] font-black text-slate-400 uppercase ml-1">Localização</label>
+                                <select id="formBloco" onchange="toggleOthers('formBloco', 'outrosBloco')" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none input-focus">
+                                    <optgroup label="Blocos Letras">
+                                        <option value="BLOCO A">BLOCO A</option>
+                                        <option value="BLOCO B">BLOCO B</option>
+                                        <option value="BLOCO C">BLOCO C</option>
+                                    </optgroup>
+                                    <optgroup label="Blocos Números">
+                                        <option value="BLOCO 01">BLOCO 01</option>
+                                        <option value="BLOCO 02">BLOCO 02</option>
+                                        <option value="BLOCO 03">BLOCO 03</option>
+                                        <option value="BLOCO 04">BLOCO 04</option>
+                                        <option value="BLOCO 05">BLOCO 05</option>
+                                        <option value="BLOCO 06">BLOCO 06</option>
+                                        <option value="BLOCO 07">BLOCO 07</option>
+                                        <option value="BLOCO 08">BLOCO 08</option>
+                                        <option value="BLOCO 09">BLOCO 09</option>
+                                        <option value="BLOCO 10">BLOCO 10</option>
+                                        <option value="BLOCO 11">BLOCO 11</option>
+                                        <option value="BLOCO 12">BLOCO 12</option>
+                                        <option value="BLOCO 13">BLOCO 13</option>
+                                        <option value="BLOCO 14">BLOCO 14</option>
+                                    </optgroup>
+                                    <optgroup label="Outros">
+                                        <option value="ÁREA GERAL">ÁREA GERAL</option>
+                                        <option value="OUTROS">OUTROS (DIGITAR)</option>
+                                    </optgroup>
+                                </select>
+                                <input type="text" id="outrosBloco" placeholder="Qual o Bloco/Local?" class="hidden mt-2 w-full bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 font-bold text-emerald-800 outline-none uppercase">
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1">Operador</label>
-                                <div class="input-group-icon">
-                                    <i class="fas fa-user"></i>
-                                    <select id="operadorSelect" required onchange="toggleOutro('operadorSelect', 'outroOperadorContainer')" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold bg-white text-sm">
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 gap-3">
+                                <div class="space-y-1">
+                                    <label class="text-[11px] font-black text-slate-400 uppercase ml-1">Operador</label>
+                                    <select id="formOperador" onchange="toggleOthers('formOperador', 'outrosOperador')" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none input-focus">
                                         <option value="EDUARDO">EDUARDO</option>
                                         <option value="MESSIAS">MESSIAS</option>
-                                        <option value="OUTRO">OUTRO...</option>
+                                        <option value="ROBERTO">ROBERTO</option>
+                                        <option value="JOÃO">JOÃO</option>
+                                        <option value="OUTROS">OUTROS (DIGITAR)</option>
                                     </select>
+                                    <input type="text" id="outrosOperador" placeholder="Nome do Operador" class="hidden mt-2 w-full bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 font-bold text-emerald-800 outline-none uppercase">
                                 </div>
-                                <div id="outroOperadorContainer" class="mt-2 hidden">
-                                    <input type="text" id="operadorOutro" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold uppercase text-sm" placeholder="Nome do Operador">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1">Equipamento</label>
-                                <div class="input-group-icon">
-                                    <i class="fas fa-gas-pump"></i>
-                                    <select id="equipamentoSelect" required onchange="toggleOutro('equipamentoSelect', 'outroEquipamentoContainer')" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold bg-white text-sm">
-                                        <option value="Roçadeira 01">Roçadeira 01</option>
-                                        <option value="Roçadeira 02">Roçadeira 02</option>
-                                        <option value="Roçadeira 03">Roçadeira 03</option>
-                                        <option value="Roçadeira 04">Roçadeira 04</option>
-                                        <option value="Roçadeira 05">Roçadeira 05</option>
-                                        <option value="Roçadeira 06">Roçadeira 06</option>
-                                        <option value="Roçadeira 07">Roçadeira 07</option>
-                                        <option value="Roçadeira 08">Roçadeira 08</option>
-                                        <option value="Roçadeira 09">Roçadeira 09</option>
-                                        <option value="Roçadeira 10">Roçadeira 10</option>
-                                        <option value="Roçadeira 11">Roçadeira 11</option>
-                                        <option value="Roçadeira 12">Roçadeira 12</option>
-                                        <option value="Roçadeira 13">Roçadeira 13</option>
-                                        <option value="Roçadeira 14">Roçadeira 14</option>
-                                        <option value="Roçadeira 15">Roçadeira 15</option>
-                                        <option value="OUTRO">OUTRO...</option>
+                                
+                                <div class="space-y-1">
+                                    <label class="text-[11px] font-black text-slate-400 uppercase ml-1">Equipamento</label>
+                                    <select id="formEquip" onchange="toggleOthers('formEquip', 'outrosEquip')" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none input-focus">
+                                        <option value="ROÇADEIRA 01">ROÇADEIRA 01</option>
+                                        <option value="ROÇADEIRA 02">ROÇADEIRA 02</option>
+                                        <option value="ROÇADEIRA 03">ROÇADEIRA 03</option>
+                                        <option value="ROÇADEIRA 04">ROÇADEIRA 04</option>
+                                        <option value="ROÇADEIRA 05">ROÇADEIRA 05</option>
+                                        <option value="OUTROS">OUTROS (DIGITAR)</option>
                                     </select>
-                                </div>
-                                <div id="outroEquipamentoContainer" class="mt-2 hidden">
-                                    <input type="text" id="equipamentoOutro" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold uppercase text-sm" placeholder="Qual Equipamento?">
+                                    <input type="text" id="outrosEquip" placeholder="Qual Equipamento?" class="hidden mt-2 w-full bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 font-bold text-emerald-800 outline-none uppercase">
                                 </div>
                             </div>
                         </div>
 
-                        <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase mb-1.5 ml-1">Localização</label>
-                            <div class="input-group-icon">
-                                <i class="fas fa-map-marker-alt"></i>
-                                <select id="blocoSelect" required onchange="toggleOutro('blocoSelect', 'outroBlocoContainer')" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold bg-white text-sm">
-                                    <option value="BLOCO A">BLOCO A</option>
-                                    <option value="BLOCO B">BLOCO B</option>
-                                    <option value="BLOCO C">BLOCO C</option>
-                                    <option value="BLOCO 01">BLOCO 01</option>
-                                    <option value="BLOCO 02">BLOCO 02</option>
-                                    <option value="BLOCO 03">BLOCO 03</option>
-                                    <option value="BLOCO 04">BLOCO 04</option>
-                                    <option value="BLOCO 05">BLOCO 05</option>
-                                    <option value="BLOCO 06">BLOCO 06</option>
-                                    <option value="BLOCO 07">BLOCO 07</option>
-                                    <option value="BLOCO 08">BLOCO 08</option>
-                                    <option value="BLOCO 09">BLOCO 09</option>
-                                    <option value="BLOCO 10">BLOCO 10</option>
-                                    <option value="BLOCO 11">BLOCO 11</option>
-                                    <option value="BLOCO 12">BLOCO 12</option>
-                                    <option value="BLOCO 13">BLOCO 13</option>
-                                    <option value="BLOCO 14">BLOCO 14</option>
-                                    <option value="BLOCO 15">BLOCO 15</option>
-                                    <option value="ÁREA GERAL">ÁREA GERAL</option>
-                                    <option value="OUTRO">OUTRO...</option>
-                                </select>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                            <div class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
+                                <span class="text-[10px] font-black text-emerald-700 uppercase block mb-2">Horário Manhã</span>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="time" id="m_inicio" class="w-full rounded-lg p-2 text-sm font-bold border border-emerald-200">
+                                    <input type="time" id="m_fim" class="w-full rounded-lg p-2 text-sm font-bold border border-emerald-200">
+                                </div>
                             </div>
-                            <div id="outroBlocoContainer" class="mt-2 hidden">
-                                <input type="text" id="blocoOutro" class="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold uppercase text-sm" placeholder="Qual Bloco/Área?">
+                            <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100">
+                                <span class="text-[10px] font-black text-amber-700 uppercase block mb-2">Horário Tarde</span>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="time" id="t_inicio" class="w-full rounded-lg p-2 text-sm font-bold border border-amber-200">
+                                    <input type="time" id="t_fim" class="w-full rounded-lg p-2 text-sm font-bold border border-amber-200">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                             <p class="text-[9px] font-black text-slate-400 uppercase mb-3 text-center tracking-widest">Horário do Turno</p>
-                             <div class="grid grid-cols-2 gap-4">
-                                 <div class="space-y-1">
-                                    <label class="text-[8px] font-bold text-slate-400 uppercase ml-1">Início</label>
-                                    <div class="input-group-icon">
-                                        <i class="fas fa-hourglass-start"></i>
-                                        <input type="time" id="horaInicio" required class="w-full px-3 py-2.5 rounded-lg border border-slate-200 font-bold text-sm">
-                                    </div>
-                                 </div>
-                                 <div class="space-y-1">
-                                    <label class="text-[8px] font-bold text-slate-400 uppercase ml-1">Fim</label>
-                                    <div class="input-group-icon">
-                                        <i class="fas fa-hourglass-end"></i>
-                                        <input type="time" id="horaFim" required class="w-full px-3 py-2.5 rounded-lg border border-slate-200 font-bold text-sm">
-                                    </div>
-                                 </div>
-                             </div>
-                        </div>
-
-                        <div class="bg-slate-900 p-4 rounded-xl flex justify-between items-center">
-                            <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Tempo no Turno</span>
-                            <span id="displayTempoTotal" class="text-xl font-black text-white">00:00h</span>
-                        </div>
-
-                        <div class="input-group-icon">
-                            <i class="fas fa-check-circle"></i>
-                            <select id="status" required class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold bg-white text-sm">
-                                <option value="Operacional">Operacional (OK)</option>
-                                <option value="Manutenção Necessária">Manutenção Necessária</option>
-                                <option value="Ajuste de Lâmina">Ajuste de Lâmina</option>
-                            </select>
-                        </div>
-
-                        <button type="submit" id="submitBtn" class="w-full bg-emerald-700 text-white font-black py-4 rounded-xl shadow-lg uppercase text-xs tracking-widest hover:bg-emerald-800 transition-all active:scale-[0.98]">Salvar Registro</button>
+                        <button type="button" onclick="showConfirmModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-lg uppercase tracking-widest transition-all">
+                            Revisar e Salvar
+                        </button>
                     </form>
                 </div>
             </div>
 
-            <!-- Listagem Dinâmica -->
-            <div class="lg:col-span-8">
-                <div id="cardsGrid" class="grid grid-cols-1 gap-6"></div>
-                <div id="emptyState" class="py-24 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-200">
-                    <i class="fas fa-clipboard-list text-slate-200 text-6xl mb-4"></i>
-                    <p class="text-slate-300 font-black uppercase text-[10px] tracking-[0.3em]">Nenhum registro encontrado</p>
+            <!-- Listagem -->
+            <div class="lg:col-span-7">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-black text-slate-800 uppercase">Histórico Recente</h2>
+                    <button onclick="exportExcel()" class="bg-white border p-2 px-4 rounded-xl text-slate-600 hover:text-emerald-600 font-bold text-xs shadow-sm"><i class="fas fa-file-excel mr-2"></i> EXCEL</button>
                 </div>
+                <div id="cardsList" class="space-y-4"></div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <!-- ÁREA DE EXPORTAÇÃO (HISTÓRICO OCULTO) -->
-    <div id="exportArea">
-        <div class="export-header">
-            <div>
-                <h1 class="text-5xl font-black uppercase tracking-tight">Relatório Diário • Manuseio Roçadeiras</h1>
-                <h2 class="text-3xl font-bold text-emerald-200/80 mt-2">OÁSIS - CONTROLE OPERACIONAL</h2>
-                <div class="h-2 w-64 bg-emerald-400 my-8 rounded-full"></div>
-                <p id="exportMeta" class="text-2xl font-bold tracking-wide">Data: --/--/---- • Semana --</p>
+    <!-- Modal de Checklist / Confirmação -->
+    <div id="confirmModal" class="fixed inset-0 z-50 modal-overlay hidden flex items-center justify-center p-4">
+        <div id="captureArea" class="bg-white w-full max-w-md rounded-3xl overflow-hidden card-shadow">
+            <div class="bg-emerald-600 p-6 text-white text-center">
+                <h3 class="text-xl font-black uppercase">Checklist de Dados</h3>
+                <p class="text-[10px] opacity-80 uppercase font-bold">Verifique antes de confirmar</p>
             </div>
-            <img src="https://i.imgur.com/rB1Lk8y.png" class="logo-export">
-        </div>
+            <div class="p-8 space-y-4">
+                <div id="confirmDataText" class="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-sm space-y-3">
+                    <!-- Preenchido via JS -->
+                </div>
+                
+                <div id="modalButtons" class="space-y-3 text-center">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Os dados estão corretos?</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="closeModal('confirmModal')" class="bg-slate-100 font-bold py-4 rounded-xl uppercase text-xs text-slate-500 hover:bg-slate-200 transition-colors">Corrigir</button>
+                        <button onclick="saveRecord()" class="bg-emerald-600 text-white font-bold py-4 rounded-xl uppercase text-xs shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all">Sim, Salvar!</button>
+                    </div>
+                </div>
 
-        <div class="p-16">
-            <div id="exportListFull" class="space-y-10"></div>
-            
-            <div class="mt-24 pt-12 border-t border-slate-200 flex justify-between items-end">
-                <div>
-                    <p class="text-slate-400 font-black uppercase text-xs tracking-widest mb-2">Resumo Consolidado</p>
-                    <p id="resumoGeralExport" class="text-3xl font-black text-slate-800">Total: 0 Registros</p>
+                <div id="successActions" class="hidden space-y-3 pt-2">
+                    <div class="bg-emerald-50 text-emerald-700 p-3 rounded-xl text-center font-bold text-xs mb-4">
+                        <i class="fas fa-check-circle mr-2"></i> REGISTRO SINCRONIZADO COM SUCESSO!
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="sendWhatsapp()" class="bg-[#25D366] text-white font-bold py-4 rounded-xl uppercase text-[10px] flex items-center justify-center gap-2 shadow-md">
+                            <i class="fab fa-whatsapp text-lg"></i> WhatsApp
+                        </button>
+                        <button onclick="downloadJPEG()" class="bg-slate-800 text-white font-bold py-4 rounded-xl uppercase text-[10px] flex items-center justify-center gap-2 shadow-md">
+                            <i class="fas fa-image text-lg"></i> Baixar JPEG
+                        </button>
+                    </div>
+                    <button onclick="location.reload()" class="w-full text-slate-400 font-bold py-2 text-[10px] uppercase hover:text-slate-600">Fechar e Iniciar Novo</button>
+                </div>
+
+                <div id="modalLoading" class="hidden text-center py-4">
+                    <div class="loading-spinner mr-2"></div>
+                    <span class="text-xs font-bold text-slate-500 uppercase">Enviando dados...</span>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        let registros = [];
-        const dataInput = document.getElementById('data');
-        const periodoInput = document.getElementById('periodo');
-        const hInicio = document.getElementById('horaInicio');
-        const hFim = document.getElementById('horaFim');
-        const displayTempo = document.getElementById('displayTempoTotal');
-        const editIdInput = document.getElementById('editId');
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxQgPyAKlDqx_gllFnBkpWfHUF5NQr9btmiXxeugi3e54l-iPQ-T5mQVEHdmoVRNZHrbQ/exec";
+        let registros = JSON.parse(localStorage.getItem('oasis_records')) || [];
+        let currentRecord = null;
 
-        function toggleOutro(selectId, containerId) {
+        window.onload = () => {
+            document.getElementById('formData').valueAsDate = new Date();
+            render();
+        };
+
+        function toggleOthers(selectId, inputId) {
             const select = document.getElementById(selectId);
-            const container = document.getElementById(containerId);
-            container.classList.toggle('hidden', select.value !== 'OUTRO');
-        }
-
-        function getWeek(d) {
-            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-            return Math.ceil((((d - new Date(Date.UTC(d.getUTCFullYear(), 0, 1))) / 86400000) + 1) / 7);
+            const input = document.getElementById(inputId);
+            if (select.value === "OUTROS") {
+                input.classList.remove('hidden');
+                input.required = true;
+                input.focus();
+            } else {
+                input.classList.add('hidden');
+                input.required = false;
+                input.value = "";
+            }
         }
 
         function diffMinutes(start, end) {
@@ -336,301 +233,187 @@
             return minE < minS ? (minE + 1440) - minS : minE - minS;
         }
 
-        function formatarTempo(minutosTotal) {
-            const h = Math.floor(minutosTotal / 60);
-            const m = minutosTotal % 60;
+        function formatTimeFromMin(min) {
+            const h = Math.floor(min / 60);
+            const m = min % 60;
             return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
         }
 
-        function calcularTempoTotal() {
-            const total = diffMinutes(hInicio.value, hFim.value);
-            const res = formatarTempo(total);
-            displayTempo.innerText = res + "h";
-            return { string: res, minutos: total };
-        }
-
-        [hInicio, hFim].forEach(i => i.addEventListener('change', calcularTempoTotal));
-
-        dataInput.addEventListener('change', (e) => {
-            const d = new Date(e.target.value + 'T00:00:00');
-            const dataBr = e.target.value.split('-').reverse().join('/');
-            const semana = getWeek(d);
-            document.getElementById('exportMeta').innerText = `Data: ${dataBr} • Semana ${semana}`;
-        });
-
-        document.getElementById('rocadeiraForm').addEventListener('submit', e => {
-            e.preventDefault();
+        function showConfirmModal() {
+            const mi = document.getElementById('m_inicio').value;
+            const mf = document.getElementById('m_fim').value;
+            const ti = document.getElementById('t_inicio').value;
+            const tf = document.getElementById('t_fim').value;
             
-            const opSel = document.getElementById('operadorSelect');
-            const eqSel = document.getElementById('equipamentoSelect');
-            const blSel = document.getElementById('blocoSelect');
-            
-            const tempo = calcularTempoTotal();
-            
-            const reg = {
-                id: editIdInput.value ? parseInt(editIdInput.value) : Date.now(),
-                periodo: periodoInput.value,
-                dataIso: dataInput.value,
-                data: dataInput.value.split('-').reverse().join('/'),
-                operador: opSel.value === 'OUTRO' ? document.getElementById('operadorOutro').value.toUpperCase() : opSel.value,
-                bloco: blSel.value === 'OUTRO' ? document.getElementById('blocoOutro').value.toUpperCase() : blSel.value.toUpperCase(),
-                equip: eqSel.value === 'OUTRO' ? document.getElementById('equipamentoOutro').value : eqSel.value,
-                horaInicio: hInicio.value,
-                horaFim: hFim.value,
-                minutos: tempo.minutos,
-                status: document.getElementById('status').value.toUpperCase()
+            // Lógica para nomes customizados
+            let operador = document.getElementById('formOperador').value;
+            if (operador === "OUTROS") operador = document.getElementById('outrosOperador').value.toUpperCase() || "OUTROS";
+
+            let equip = document.getElementById('formEquip').value;
+            if (equip === "OUTROS") equip = document.getElementById('outrosEquip').value.toUpperCase() || "OUTROS";
+
+            let bloco = document.getElementById('formBloco').value;
+            if (bloco === "OUTROS") bloco = document.getElementById('outrosBloco').value.toUpperCase() || "OUTROS";
+
+            const m_min = diffMinutes(mi, mf);
+            const t_min = diffMinutes(ti, tf);
+            const total = formatTimeFromMin(m_min + t_min);
+
+            const data = {
+                data: document.getElementById('formData').value.split('-').reverse().join('/'),
+                operador: operador,
+                bloco: bloco,
+                equip: equip,
+                total: total,
+                m: mi && mf ? `${mi} às ${mf}` : "Não trabalhou",
+                t: ti && tf ? `${ti} às ${tf}` : "Não trabalhou",
+                m_min: m_min,
+                t_min: t_min
             };
 
-            if(editIdInput.value) {
-                const idx = registros.findIndex(r => r.id === reg.id);
-                registros[idx] = reg;
-            } else {
-                registros.push(reg);
-            }
-            render();
-            resetForm();
-        });
+            document.getElementById('confirmDataText').innerHTML = `
+                <div class="flex justify-between border-b pb-1 uppercase"><b class="text-slate-400">DATA:</b> <span class="font-bold">${data.data}</span></div>
+                <div class="flex justify-between border-b pb-1 uppercase"><b class="text-slate-400">OPERADOR:</b> <span class="font-bold text-emerald-700">${data.operador}</span></div>
+                <div class="flex justify-between border-b pb-1 uppercase"><b class="text-slate-400">LOCAL:</b> <span class="font-bold">${data.bloco}</span></div>
+                <div class="flex justify-between border-b pb-1 uppercase"><b class="text-slate-400">EQUIP:</b> <span class="font-bold">${data.equip}</span></div>
+                <div class="pt-2">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Turnos e Horários</p>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="bg-emerald-50 p-2 rounded-lg"><b>MANHÃ:</b><br>${data.m}</div>
+                        <div class="bg-amber-50 p-2 rounded-lg"><b>TARDE:</b><br>${data.t}</div>
+                    </div>
+                </div>
+                <div class="text-center pt-2">
+                    <p class="text-sm font-black text-emerald-600 uppercase">Tempo Total Acumulado: ${data.total}h</p>
+                </div>
+            `;
+            
+            currentRecord = data;
+            document.getElementById('modalButtons').classList.remove('hidden');
+            document.getElementById('successActions').classList.add('hidden');
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
 
-        function resetForm() {
-            document.getElementById('rocadeiraForm').reset();
-            editIdInput.value = "";
-            displayTempo.innerText = "00:00h";
-            document.getElementById('outroOperadorContainer').classList.add('hidden');
-            document.getElementById('outroEquipamentoContainer').classList.add('hidden');
-            document.getElementById('outroBlocoContainer').classList.add('hidden');
-            initDate();
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        async function saveRecord() {
+            document.getElementById('modalButtons').classList.add('hidden');
+            document.getElementById('modalLoading').classList.remove('hidden');
+
+            const formData = new URLSearchParams();
+            formData.append("Data", currentRecord.data);
+            formData.append("Periodo", (currentRecord.m !== "Não trabalhou" && currentRecord.t !== "Não trabalhou") ? "Integral" : (currentRecord.m !== "Não trabalhou" ? "Manhã" : "Tarde"));
+            formData.append("Operador", currentRecord.operador);
+            formData.append("Equipamento", currentRecord.equip);
+            formData.append("Localização", currentRecord.bloco);
+            formData.append("Horário manhã", currentRecord.m);
+            formData.append("Horário Tarde", currentRecord.t);
+            formData.append("Total minutos Manhã", currentRecord.m_min);
+            formData.append("Total minutos Tarde", currentRecord.t_min);
+
+            try {
+                await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+
+                const recordLocal = { ...currentRecord, id: Date.now() };
+                registros.push(recordLocal);
+                localStorage.setItem('oasis_records', JSON.stringify(registros));
+                
+                document.getElementById('modalLoading').classList.add('hidden');
+                document.getElementById('successActions').classList.remove('hidden');
+                render();
+            } catch (e) {
+                alert("Erro de conexão com o servidor. Tente novamente.");
+                document.getElementById('modalButtons').classList.remove('hidden');
+                document.getElementById('modalLoading').classList.add('hidden');
+            }
         }
 
         function render() {
-            const grid = document.getElementById('cardsGrid');
-            const exportList = document.getElementById('exportListFull');
-            
-            document.getElementById('emptyState').classList.toggle('hidden', registros.length > 0);
-            document.getElementById('resumoGeralExport').innerText = `Total: ${registros.length} Registros`;
+            const list = document.getElementById('cardsList');
+            if (registros.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 text-slate-300 font-bold uppercase text-[10px] border-2 border-dashed rounded-3xl border-slate-200">Aguardando novos registros...</div>`;
+                return;
+            }
 
-            // AGRUPAMENTO: Agrupamos por Data, Operador, Bloco e Equipamento
-            // Mas agora tratamos Bloco A, B e C como chaves únicas separadas
-            const agrupados = {};
-            registros.forEach(r => {
-                const key = `${r.dataIso}-${r.operador}-${r.bloco}-${r.equip}`;
-                if(!agrupados[key]) agrupados[key] = { manha: null, tarde: null };
-                if(r.periodo === 'MANHÃ') agrupados[key].manha = r;
-                else agrupados[key].tarde = r;
-            });
-
-            // ORDENAÇÃO ALFABÉTICA:
-            // Ordenamos primeiro pelo Operador e depois pelo Bloco
-            const keysSorted = Object.keys(agrupados).sort((a, b) => {
-                const partsA = a.split('-'); // 0: data, 1: op, 2: bloco, 3: equip
-                const partsB = b.split('-');
-                
-                // Primeiro critério: Operador (Índice 1 no split)
-                if (partsA[1] < partsB[1]) return -1;
-                if (partsA[1] > partsB[1]) return 1;
-                
-                // Segundo critério: Bloco (Índice 2 no split)
-                if (partsA[2] < partsB[2]) return -1;
-                if (partsA[2] > partsB[2]) return 1;
-
-                return 0;
-            });
-
-            grid.innerHTML = keysSorted.map(key => {
-                const { manha, tarde } = agrupados[key];
-                const main = manha || tarde;
-                const totalMins = (manha ? manha.minutos : 0) + (tarde ? tarde.minutos : 0);
-                
-                return `
-                <div class="card-base">
-                    <div class="bg-slate-50 px-6 py-3 border-b border-slate-100 flex justify-between items-center">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${main.data} • ${main.bloco}</span>
-                        <div class="flex space-x-2">
-                             <button onclick="editarTurno('${key}', 'MANHÃ')" class="text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 px-2 py-1 rounded">Edit Manhã</button>
-                             <button onclick="editarTurno('${key}', 'TARDE')" class="text-[10px] font-bold text-amber-600 hover:bg-amber-50 px-2 py-1 rounded">Edit Tarde</button>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <div class="flex justify-between items-start mb-6">
-                            <div>
-                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 mb-1">
-                                    <i class="fas fa-id-badge text-emerald-500"></i> Operador
-                                </p>
-                                <h3 class="text-2xl font-black text-slate-800 uppercase leading-none">${main.operador}</h3>
-                                <p class="text-sm font-bold text-slate-400 mt-2"><i class="fas fa-gas-pump mr-2"></i>${main.equip}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[9px] font-black text-slate-300 uppercase">Tempo Consolidado</p>
-                                <p class="text-2xl font-black text-emerald-600">${formatarTempo(totalMins)}h</p>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="p-3 rounded-xl border ${manha ? 'bg-white border-emerald-100 shadow-sm' : 'bg-slate-50 border-dashed border-slate-200 opacity-60'}">
-                                <div class="flex items-center space-x-2 mb-2">
-                                    <i class="fas fa-sun ${manha ? 'text-emerald-500' : 'text-slate-300'} text-xs"></i>
-                                    <span class="text-[10px] font-black ${manha ? 'text-slate-700' : 'text-slate-400'} uppercase">Manhã</span>
-                                </div>
-                                <p class="text-lg font-black ${manha ? 'text-slate-800' : 'text-slate-300'}">${manha ? formatarTempo(manha.minutos)+'h' : '--:--'}</p>
-                                ${manha ? `<p class="text-[8px] font-bold text-slate-400 uppercase mt-1">${manha.horaInicio} ➔ ${manha.horaFim}</p>` : ''}
-                            </div>
-                            <div class="p-3 rounded-xl border ${tarde ? 'bg-white border-amber-100 shadow-sm' : 'bg-slate-50 border-dashed border-slate-200 opacity-60'}">
-                                <div class="flex items-center space-x-2 mb-2">
-                                    <i class="fas fa-cloud-sun ${tarde ? 'text-amber-500' : 'text-slate-300'} text-xs"></i>
-                                    <span class="text-[10px] font-black ${tarde ? 'text-slate-700' : 'text-slate-400'} uppercase">Tarde</span>
-                                </div>
-                                <p class="text-lg font-black ${tarde ? 'text-slate-800' : 'text-slate-300'}">${tarde ? formatarTempo(tarde.minutos)+'h' : '--:--'}</p>
-                                ${tarde ? `<p class="text-[8px] font-bold text-slate-400 uppercase mt-1">${tarde.horaInicio} ➔ ${tarde.horaFim}</p>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                `;
-            }).join('');
-
-            exportList.innerHTML = keysSorted.map(key => {
-                const { manha, tarde } = agrupados[key];
-                const main = manha || tarde;
-                const totalMins = (manha ? manha.minutos : 0) + (tarde ? tarde.minutos : 0);
-                
-                return `
-                <div class="export-card">
-                    <div class="flex justify-between items-start mb-8">
+            list.innerHTML = registros.slice().reverse().map(r => `
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 card-shadow">
+                    <div class="flex justify-between items-start mb-4">
                         <div>
-                            <p class="text-emerald-700 font-black text-lg uppercase tracking-widest mb-4">
-                                <i class="fas fa-map-marker-alt mr-2"></i>LOCAL: ${main.bloco}
-                            </p>
-                            <div class="mb-4">
-                                <p class="text-slate-400 font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3 mb-2">
-                                    <i class="fas fa-user-circle text-2xl"></i> Operador Responsável
-                                </p>
-                                <h3 class="text-5xl font-black text-slate-900 uppercase tracking-tighter">${main.operador}</h3>
-                            </div>
-                            <p class="text-2xl font-bold text-slate-400 mt-2">${main.equip}</p>
+                            <span class="bg-slate-100 text-slate-500 text-[10px] font-black px-2 py-1 rounded-md uppercase">${r.data}</span>
+                            <h4 class="font-black text-slate-800 text-lg uppercase mt-1 tracking-tight">${r.operador}</h4>
                         </div>
-                        <div class="bg-emerald-50 p-8 rounded-[40px] text-right border border-emerald-100 shadow-sm">
-                            <p class="text-xs font-black text-emerald-600 uppercase tracking-[0.3em] mb-2">Horas Totais</p>
-                            <p class="text-6xl font-black text-emerald-700">${formatarTempo(totalMins)}h</p>
+                        <div class="text-right">
+                             <span class="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md uppercase">${r.bloco}</span>
+                             <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase">${r.equip}</p>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-2 gap-10">
-                        <div class="export-data-box" style="border-left: 12px solid #10b981;">
-                            <div>
-                                <p class="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Turno Manhã</p>
-                                <p class="text-4xl font-black text-slate-800">${manha ? formatarTempo(manha.minutos)+'h' : 'SEM REGISTRO'}</p>
-                                ${manha ? `<p class="text-lg font-bold text-emerald-600 mt-1">${manha.horaInicio} ➔ ${manha.horaFim}</p>` : ''}
-                            </div>
-                            <i class="fas fa-sun text-emerald-100 text-6xl"></i>
+                    <div class="grid grid-cols-2 gap-4 text-[11px] border-t border-slate-50 pt-4">
+                        <div>
+                            <p class="text-slate-400 font-black text-[9px] uppercase tracking-tighter">Turno Manhã</p>
+                            <p class="font-bold text-slate-700">${r.m}</p>
                         </div>
-                        <div class="export-data-box" style="border-left: 12px solid #f59e0b;">
-                            <div>
-                                <p class="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Turno Tarde</p>
-                                <p class="text-4xl font-black text-slate-800">${tarde ? formatarTempo(tarde.minutos)+'h' : 'SEM REGISTRO'}</p>
-                                ${tarde ? `<p class="text-lg font-bold text-amber-600 mt-1">${tarde.horaInicio} ➔ ${tarde.horaFim}</p>` : ''}
-                            </div>
-                            <i class="fas fa-cloud-sun text-amber-100 text-6xl"></i>
+                        <div>
+                            <p class="text-slate-400 font-black text-[9px] uppercase tracking-tighter">Turno Tarde</p>
+                            <p class="font-bold text-slate-700">${r.t}</p>
                         </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-emerald-100 flex justify-between items-center">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Horas</span>
+                        <span class="text-xl font-black text-emerald-600">${r.total}h</span>
                     </div>
                 </div>
-                `;
-            }).join('');
+            `).join('');
         }
 
-        function editarTurno(key, periodo) {
-            const parts = key.split('-');
-            const dIso = `${parts[0]}-${parts[1]}-${parts[2]}`;
-            const op = parts[3];
-            const bloco = parts[4];
-            const equip = parts[5];
-            
-            const r = registros.find(x => x.dataIso === dIso && x.operador === op && x.bloco === bloco && x.equip === equip && x.periodo === periodo);
-            
-            if(r) {
-                editIdInput.value = r.id;
-                dataInput.value = r.dataIso;
-                periodoInput.value = r.periodo;
-                hInicio.value = r.horaInicio;
-                hFim.value = r.horaFim;
-
-                // Set Operador
-                const opSel = document.getElementById('operadorSelect');
-                if(['EDUARDO','MESSIAS'].includes(r.operador)) {
-                    opSel.value = r.operador;
-                    document.getElementById('outroOperadorContainer').classList.add('hidden');
-                } else {
-                    opSel.value = 'OUTRO';
-                    document.getElementById('outroOperadorContainer').classList.remove('hidden');
-                    document.getElementById('operadorOutro').value = r.operador;
-                }
-
-                // Set Equipamento
-                const eqSel = document.getElementById('equipamentoSelect');
-                let eqFound = Array.from(eqSel.options).some(opt => opt.value === r.equip);
-                if(eqFound && r.equip !== 'OUTRO') {
-                    eqSel.value = r.equip;
-                    document.getElementById('outroEquipamentoContainer').classList.add('hidden');
-                } else {
-                    eqSel.value = 'OUTRO';
-                    document.getElementById('outroEquipamentoContainer').classList.remove('hidden');
-                    document.getElementById('equipamentoOutro').value = r.equip;
-                }
-
-                // Set Bloco
-                const blSel = document.getElementById('blocoSelect');
-                let blFound = Array.from(blSel.options).some(opt => opt.value === r.bloco);
-                if(blFound && r.bloco !== 'OUTRO') {
-                    blSel.value = r.bloco;
-                    document.getElementById('outroBlocoContainer').classList.add('hidden');
-                } else {
-                    blSel.value = 'OUTRO';
-                    document.getElementById('outroBlocoContainer').classList.remove('hidden');
-                    document.getElementById('blocoOutro').value = r.bloco;
-                }
-            }
-            calcularTempoTotal();
-            window.scrollTo({top:0, behavior:'smooth'});
+        function sendWhatsapp() {
+            const text = `*RELATÓRIO OÁSIS - ROÇADEIRA*\n\n` +
+                         `📅 *Data:* ${currentRecord.data}\n` +
+                         `👤 *Operador:* ${currentRecord.operador}\n` +
+                         `📍 *Local:* ${currentRecord.bloco}\n` +
+                         `⚙️ *Equipamento:* ${currentRecord.equip}\n\n` +
+                         `🌅 *Manhã:* ${currentRecord.m}\n` +
+                         `🌇 *Tarde:* ${currentRecord.t}\n\n` +
+                         `⏳ *TOTAL ACUMULADO:* ${currentRecord.total}h\n\n` +
+                         `_Sistema de Gestão SPG Oásis_`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
         }
 
-        async function exportar(tipo) {
-            if(registros.length === 0) return;
-            const area = document.getElementById('exportArea');
-            const canvas = await html2canvas(area, { scale: 2, useCORS: true, backgroundColor: '#f8fafc' });
-
-            if (tipo === 'jpg') {
+        function downloadJPEG() {
+            const area = document.getElementById('captureArea');
+            const originalStyle = area.style.borderRadius;
+            area.style.borderRadius = "0"; // Melhora borda na captura
+            
+            document.getElementById('successActions').classList.add('hidden');
+            
+            html2canvas(area, { scale: 2 }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = `relatorio-rocadeiras-oasis.jpg`;
-                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.download = `RELATORIO_OASIS_${currentRecord.operador}_${currentRecord.data.replace(/\//g, '-')}.jpg`;
+                link.href = canvas.toDataURL("image/jpeg", 0.9);
                 link.click();
-            } else {
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const imgData = canvas.toDataURL('image/png');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`relatorio-rocadeiras-oasis.pdf`);
-            }
+                document.getElementById('successActions').classList.remove('hidden');
+                area.style.borderRadius = originalStyle;
+            });
         }
 
-        function exportarExcel() {
-            if (registros.length === 0) return;
-            const dadosExcel = registros.map(r => ({
-                Data: r.data, Período: r.periodo, Operador: r.operador, Bloco: r.bloco,
-                Equipamento: r.equip, Início: r.horaInicio, Fim: r.horaFim, "Tempo (min)": r.minutos, Status: r.status
-            }));
-            const ws = XLSX.utils.json_to_sheet(dadosExcel);
+        function resetForm() {
+            document.getElementById('mainForm').reset();
+            document.getElementById('outrosOperador').classList.add('hidden');
+            document.getElementById('outrosEquip').classList.add('hidden');
+            document.getElementById('outrosBloco').classList.add('hidden');
+            document.getElementById('formData').valueAsDate = new Date();
+        }
+
+        function exportExcel() {
+            const ws = XLSX.utils.json_to_sheet(registros);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Dados");
-            XLSX.writeFile(wb, "historico_rocadeiras.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Histórico");
+            XLSX.writeFile(wb, "Oasis_Rocadeiras_Relatorio.xlsx");
         }
-
-        function initDate() {
-            const today = new Date().toISOString().split('T')[0];
-            dataInput.value = today;
-            dataInput.dispatchEvent(new Event('change'));
-        }
-
-        initDate();
     </script>
 </body>
 </html>
