@@ -20,7 +20,6 @@
         .input-focus { transition: all 0.2s; border: 2px solid transparent; }
         .input-focus:focus { border-color: #10b981; background-color: white; }
         
-        /* Estilo para a captura unificada */
         #captureContainer { padding: 20px; background: #f8fafc; width: 500px; position: fixed; left: -9999px; }
         .capture-header { background: #022c22; color: white; padding: 20px; text-align: center; border-radius: 15px 15px 0 0; }
     </style>
@@ -104,9 +103,9 @@
                                     <label class="text-[11px] font-black text-slate-400 uppercase ml-1">Operador</label>
                                     <select id="formOperador" onchange="toggleOthers('formOperador', 'outrosOperador')" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none input-focus">
                                         <option value="EDUARDO">EDUARDO</option>
+                                        <option value="JOÃO">JOÃO</option>
                                         <option value="MESSIAS">MESSIAS</option>
                                         <option value="ROBERTO">ROBERTO</option>
-                                        <option value="JOÃO">JOÃO</option>
                                         <option value="OUTROS">OUTROS (DIGITAR)</option>
                                     </select>
                                     <input type="text" id="outrosOperador" placeholder="Nome do Operador" class="hidden mt-2 w-full bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 font-bold text-emerald-800 outline-none uppercase">
@@ -176,7 +175,6 @@
             <p id="captureDate" class="text-emerald-200 text-xs font-bold"></p>
         </div>
         <div id="captureList" class="p-4 space-y-4 bg-slate-50 border-x border-b border-slate-200 rounded-b-2xl">
-            <!-- Cards serão clonados aqui -->
         </div>
     </div>
 
@@ -189,7 +187,6 @@
             </div>
             <div class="p-8 space-y-4">
                 <div id="confirmDataText" class="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-sm space-y-3">
-                    <!-- Preenchido via JS -->
                 </div>
                 
                 <div id="modalButtons" class="space-y-3 text-center">
@@ -426,18 +423,14 @@
             
             const captureList = document.getElementById('captureList');
             const captureDateText = document.getElementById('captureDate');
-            captureList.innerHTML = ''; // Limpa anterior
+            captureList.innerHTML = ''; 
             
-            // Define data no cabeçalho (usa a data do registro mais recente)
             captureDateText.innerText = `Referente a: ${registros[registros.length-1].data}`;
 
-            // Clona cada card para a área de captura oculta
             registros.slice().reverse().forEach(r => {
                 const card = document.getElementById(`card-${r.id}`).cloneNode(true);
-                // Remove botões de ação do clone
                 const btns = card.querySelector('.z-10');
                 if (btns) btns.remove();
-                // Ajusta margem para a captura
                 card.classList.remove('card-shadow');
                 card.classList.add('border-slate-200');
                 captureList.appendChild(card);
