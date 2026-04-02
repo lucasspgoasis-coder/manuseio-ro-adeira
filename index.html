@@ -19,6 +19,10 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .input-focus { transition: all 0.2s; border: 2px solid transparent; }
         .input-focus:focus { border-color: #10b981; background-color: white; }
+        
+        /* Estilo para a captura unificada */
+        #captureContainer { padding: 20px; background: #f8fafc; width: 500px; position: fixed; left: -9999px; }
+        .capture-header { background: #022c22; color: white; padding: 20px; text-align: center; border-radius: 15px 15px 0 0; }
     </style>
 </head>
 <body class="min-h-screen pb-20">
@@ -31,7 +35,7 @@
                 </div>
                 <div>
                     <h1 class="text-lg md:text-2xl font-black uppercase tracking-tight leading-tight">Gestão de Roçadeiras</h1>
-                    <p class="text-emerald-200/70 font-medium text-xs md:text-sm">Oásis • Controle de Operações</p>
+                    <p class="text-emerald-200/70 font-medium text-xs md:sm">Oásis • Controle de Operações</p>
                 </div>
             </div>
             <div class="flex-shrink-0">
@@ -149,11 +153,14 @@
 
             <!-- Listagem -->
             <div class="lg:col-span-7">
-                <div class="flex justify-between items-center mb-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <h2 class="text-lg font-black text-slate-800 uppercase">Histórico Recente</h2>
-                    <div class="flex gap-2">
-                        <button onclick="exportExcel()" class="bg-white border p-2 px-4 rounded-xl text-slate-600 hover:text-emerald-600 font-bold text-xs shadow-sm flex items-center">
-                            <i class="fas fa-file-excel mr-2"></i> EXCEL
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="downloadAllAsJPEG()" class="bg-emerald-600 text-white p-2 px-4 rounded-xl font-black text-[10px] shadow-lg shadow-emerald-100 flex items-center uppercase tracking-wider hover:bg-emerald-700 transition-all">
+                            <i class="fas fa-camera mr-2"></i> Gerar Foto do Dia (JPEG)
+                        </button>
+                        <button onclick="exportExcel()" class="bg-white border border-slate-200 p-2 px-4 rounded-xl text-slate-600 hover:text-emerald-600 font-bold text-[10px] shadow-sm flex items-center uppercase">
+                            <i class="fas fa-file-excel mr-2"></i> Excel
                         </button>
                     </div>
                 </div>
@@ -162,12 +169,23 @@
         </div>
     </main>
 
+    <!-- Área Oculta para Captura Unificada -->
+    <div id="captureContainer">
+        <div class="capture-header">
+            <h1 class="font-black uppercase text-xl">Relatório de Operações</h1>
+            <p id="captureDate" class="text-emerald-200 text-xs font-bold"></p>
+        </div>
+        <div id="captureList" class="p-4 space-y-4 bg-slate-50 border-x border-b border-slate-200 rounded-b-2xl">
+            <!-- Cards serão clonados aqui -->
+        </div>
+    </div>
+
     <!-- Modal de Checklist / Confirmação -->
     <div id="confirmModal" class="fixed inset-0 z-50 modal-overlay hidden flex items-center justify-center p-4">
-        <div id="captureArea" class="bg-white w-full max-w-md rounded-3xl overflow-hidden card-shadow">
+        <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden card-shadow">
             <div class="bg-emerald-600 p-6 text-white text-center">
-                <h3 class="text-xl font-black uppercase">Checklist de Dados</h3>
-                <p class="text-[10px] opacity-80 uppercase font-bold">Verifique antes de confirmar</p>
+                <h3 class="text-xl font-black uppercase">Resumo do Registro</h3>
+                <p class="text-[10px] opacity-80 uppercase font-bold">Confira os dados abaixo</p>
             </div>
             <div class="p-8 space-y-4">
                 <div id="confirmDataText" class="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-sm space-y-3">
@@ -175,31 +193,30 @@
                 </div>
                 
                 <div id="modalButtons" class="space-y-3 text-center">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Os dados estão corretos?</p>
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Enviar para a planilha?</p>
                     <div class="grid grid-cols-2 gap-4">
                         <button onclick="closeModal('confirmModal')" class="bg-slate-100 font-bold py-4 rounded-xl uppercase text-xs text-slate-500 hover:bg-slate-200 transition-colors">Corrigir</button>
                         <button onclick="saveRecord()" class="bg-emerald-600 text-white font-bold py-4 rounded-xl uppercase text-xs shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all">Sim, Salvar!</button>
                     </div>
                 </div>
 
-                <div id="successActions" class="hidden space-y-3 pt-2">
-                    <div class="bg-emerald-50 text-emerald-700 p-3 rounded-xl text-center font-bold text-xs mb-4">
-                        <i class="fas fa-check-circle mr-2"></i> REGISTRO SINCRONIZADO COM SUCESSO!
+                <div id="successActions" class="hidden space-y-4 pt-2">
+                    <div class="bg-emerald-50 text-emerald-700 p-4 rounded-xl text-center font-bold text-xs">
+                        <i class="fas fa-check-circle text-lg mb-1 block"></i> REGISTRO SALVO COM SUCESSO!
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <button onclick="sendWhatsapp()" class="bg-[#25D366] text-white font-bold py-4 rounded-xl uppercase text-[10px] flex items-center justify-center gap-2 shadow-md">
-                            <i class="fab fa-whatsapp text-lg"></i> WhatsApp
+                    <div class="grid grid-cols-1 gap-3">
+                        <button onclick="sendWhatsapp()" class="w-full bg-[#25D366] text-white font-bold py-3 rounded-xl uppercase text-xs flex items-center justify-center gap-2 shadow-md">
+                            <i class="fab fa-whatsapp text-lg"></i> Compartilhar no WhatsApp
                         </button>
-                        <button onclick="downloadJPEG()" class="bg-slate-800 text-white font-bold py-4 rounded-xl uppercase text-[10px] flex items-center justify-center gap-2 shadow-md">
-                            <i class="fas fa-image text-lg"></i> Baixar JPEG
+                        <button onclick="closeModal('confirmModal'); resetForm();" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl uppercase text-xs shadow-md">
+                             Próximo Bloco
                         </button>
                     </div>
-                    <button onclick="location.reload()" class="w-full text-slate-400 font-bold py-2 text-[10px] uppercase hover:text-slate-600">Fechar e Iniciar Novo</button>
                 </div>
 
                 <div id="modalLoading" class="hidden text-center py-4">
                     <div class="loading-spinner mr-2"></div>
-                    <span class="text-xs font-bold text-slate-500 uppercase">Enviando dados...</span>
+                    <span class="text-xs font-bold text-slate-500 uppercase">Sincronizando...</span>
                 </div>
             </div>
         </div>
@@ -294,14 +311,14 @@
                 <div class="flex justify-between border-b pb-1 uppercase"><b class="text-slate-400">LOCAL:</b> <span class="font-bold">${data.bloco}</span></div>
                 <div class="flex justify-between border-b pb-1 uppercase"><b class="text-slate-400">EQUIP:</b> <span class="font-bold">${data.equip}</span></div>
                 <div class="pt-2">
-                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Turnos e Horários</p>
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Turnos</p>
                     <div class="grid grid-cols-2 gap-2 text-[11px]">
                         <div class="bg-emerald-50 p-2 rounded-lg"><b>MANHÃ:</b><br>${data.m}</div>
                         <div class="bg-amber-50 p-2 rounded-lg"><b>TARDE:</b><br>${data.t}</div>
                     </div>
                 </div>
                 <div class="text-center pt-2">
-                    <p class="text-sm font-black text-emerald-600 uppercase">Tempo Total Acumulado: ${data.total}h</p>
+                    <p class="text-sm font-black text-emerald-600 uppercase">Tempo Total: ${data.total}h</p>
                 </div>
             `;
             
@@ -331,7 +348,6 @@
             formData.append("Total minutos Tarde", currentRecord.t_min);
 
             try {
-                // Envio para a Planilha (Google Apps Script)
                 await fetch(WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -348,17 +364,101 @@
                 }
                 
                 localStorage.setItem('oasis_records', JSON.stringify(registros));
-                
-                // Limpa o estado de edição para o próximo não herdar
                 document.getElementById('editId').value = "";
-                
                 document.getElementById('modalLoading').classList.add('hidden');
                 document.getElementById('successActions').classList.remove('hidden');
                 render();
             } catch (e) {
-                alert("Erro de conexão com o servidor. Tente novamente.");
+                alert("Erro ao enviar. Tente novamente.");
                 document.getElementById('modalButtons').classList.remove('hidden');
                 document.getElementById('modalLoading').classList.add('hidden');
+            }
+        }
+
+        function render() {
+            const list = document.getElementById('cardsList');
+            if (registros.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 text-slate-300 font-bold uppercase text-[10px] border-2 border-dashed rounded-3xl border-slate-200">Sem registros recentes</div>`;
+                return;
+            }
+
+            list.innerHTML = registros.slice().reverse().map(r => `
+                <div id="card-${r.id}" class="bg-white p-6 rounded-3xl border border-slate-100 card-shadow relative group overflow-hidden">
+                    <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <button onclick="editRecord(${r.id})" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteRecord(${r.id})" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex justify-between items-start mb-4 pr-24">
+                        <div>
+                            <span class="bg-slate-100 text-slate-500 text-[10px] font-black px-2 py-1 rounded-md uppercase">${r.data}</span>
+                            <h4 class="font-black text-slate-800 text-lg uppercase mt-1 tracking-tight">${r.operador}</h4>
+                        </div>
+                        <div class="text-right">
+                             <span class="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md uppercase">${r.bloco}</span>
+                             <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase">${r.equip}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-[11px] border-t border-slate-50 pt-4">
+                        <div>
+                            <p class="text-slate-400 font-black text-[9px] uppercase tracking-tighter">Manhã</p>
+                            <p class="font-bold text-slate-700">${r.m}</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-400 font-black text-[9px] uppercase tracking-tighter">Tarde</p>
+                            <p class="font-bold text-slate-700">${r.t}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-emerald-100 flex justify-between items-center">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tempo</span>
+                        <span class="text-xl font-black text-emerald-600">${r.total}h</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function downloadAllAsJPEG() {
+            if (registros.length === 0) return alert("Não há registros para exportar.");
+            
+            const captureList = document.getElementById('captureList');
+            const captureDateText = document.getElementById('captureDate');
+            captureList.innerHTML = ''; // Limpa anterior
+            
+            // Define data no cabeçalho (usa a data do registro mais recente)
+            captureDateText.innerText = `Referente a: ${registros[registros.length-1].data}`;
+
+            // Clona cada card para a área de captura oculta
+            registros.slice().reverse().forEach(r => {
+                const card = document.getElementById(`card-${r.id}`).cloneNode(true);
+                // Remove botões de ação do clone
+                const btns = card.querySelector('.z-10');
+                if (btns) btns.remove();
+                // Ajusta margem para a captura
+                card.classList.remove('card-shadow');
+                card.classList.add('border-slate-200');
+                captureList.appendChild(card);
+            });
+
+            const container = document.getElementById('captureContainer');
+            
+            try {
+                const canvas = await html2canvas(container, { 
+                    scale: 2, 
+                    useCORS: true,
+                    backgroundColor: '#f8fafc'
+                });
+                
+                const link = document.createElement('a');
+                link.download = `RELATORIO_GERAL_OASIS_${new Date().toLocaleDateString().replace(/\//g, '-')}.jpg`;
+                link.href = canvas.toDataURL("image/jpeg", 0.9);
+                link.click();
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao gerar imagem.");
             }
         }
 
@@ -372,26 +472,13 @@
             document.getElementById('formEquip').value = record.origEquip || record.equip;
             document.getElementById('formBloco').value = record.origBloco || record.bloco;
 
-            if (record.origOperador === "OUTROS") {
-                document.getElementById('outrosOperador').classList.remove('hidden');
-                document.getElementById('outrosOperador').value = record.outrosOperador || "";
-            } else {
-                document.getElementById('outrosOperador').classList.add('hidden');
-            }
+            toggleOthers('formOperador', 'outrosOperador');
+            toggleOthers('formEquip', 'outrosEquip');
+            toggleOthers('formBloco', 'outrosBloco');
 
-            if (record.origEquip === "OUTROS") {
-                document.getElementById('outrosEquip').classList.remove('hidden');
-                document.getElementById('outrosEquip').value = record.outrosEquip || "";
-            } else {
-                document.getElementById('outrosEquip').classList.add('hidden');
-            }
-
-            if (record.origBloco === "OUTROS") {
-                document.getElementById('outrosBloco').classList.remove('hidden');
-                document.getElementById('outrosBloco').value = record.outrosBloco || "";
-            } else {
-                document.getElementById('outrosBloco').classList.add('hidden');
-            }
+            if (record.origOperador === "OUTROS") document.getElementById('outrosOperador').value = record.outrosOperador;
+            if (record.origEquip === "OUTROS") document.getElementById('outrosEquip').value = record.outrosEquip;
+            if (record.origBloco === "OUTROS") document.getElementById('outrosBloco').value = record.outrosBloco;
 
             document.getElementById('m_inicio').value = record.m_inicio || "";
             document.getElementById('m_fim').value = record.m_fim || "";
@@ -399,64 +486,18 @@
             document.getElementById('t_fim').value = record.t_fim || "";
 
             document.getElementById('formTitle').innerText = "Editando Registro";
-            document.getElementById('btnSubmit').innerText = "Atualizar e Salvar";
+            document.getElementById('btnSubmit').innerText = "Atualizar Dados";
             document.getElementById('btnSubmit').classList.replace('bg-emerald-600', 'bg-blue-600');
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function deleteRecord(id) {
-            if (confirm("Tem certeza que deseja excluir este registro do histórico local?")) {
+            if (confirm("Excluir do histórico local?")) {
                 registros = registros.filter(r => r.id != id);
                 localStorage.setItem('oasis_records', JSON.stringify(registros));
                 render();
             }
-        }
-
-        function render() {
-            const list = document.getElementById('cardsList');
-            if (registros.length === 0) {
-                list.innerHTML = `<div class="text-center py-10 text-slate-300 font-bold uppercase text-[10px] border-2 border-dashed rounded-3xl border-slate-200">Aguardando novos registros...</div>`;
-                return;
-            }
-
-            list.innerHTML = registros.slice().reverse().map(r => `
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 card-shadow relative group">
-                    <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick="editRecord(${r.id})" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Editar">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="deleteRecord(${r.id})" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Excluir">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="flex justify-between items-start mb-4 pr-16">
-                        <div>
-                            <span class="bg-slate-100 text-slate-500 text-[10px] font-black px-2 py-1 rounded-md uppercase">${r.data}</span>
-                            <h4 class="font-black text-slate-800 text-lg uppercase mt-1 tracking-tight">${r.operador}</h4>
-                        </div>
-                        <div class="text-right">
-                             <span class="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md uppercase">${r.bloco}</span>
-                             <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase">${r.equip}</p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 text-[11px] border-t border-slate-50 pt-4">
-                        <div>
-                            <p class="text-slate-400 font-black text-[9px] uppercase tracking-tighter">Turno Manhã</p>
-                            <p class="font-bold text-slate-700">${r.m}</p>
-                        </div>
-                        <div>
-                            <p class="text-slate-400 font-black text-[9px] uppercase tracking-tighter">Turno Tarde</p>
-                            <p class="font-bold text-slate-700">${r.t}</p>
-                        </div>
-                    </div>
-                    <div class="mt-4 pt-3 border-t border-emerald-100 flex justify-between items-center">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Horas</span>
-                        <span class="text-xl font-black text-emerald-600">${r.total}h</span>
-                    </div>
-                </div>
-            `).join('');
         }
 
         function sendWhatsapp() {
@@ -467,26 +508,9 @@
                          `⚙️ *Equipamento:* ${currentRecord.equip}\n\n` +
                          `🌅 *Manhã:* ${currentRecord.m}\n` +
                          `🌇 *Tarde:* ${currentRecord.t}\n\n` +
-                         `⏳ *TOTAL ACUMULADO:* ${currentRecord.total}h\n\n` +
+                         `⏳ *TOTAL:* ${currentRecord.total}h\n\n` +
                          `_Sistema de Gestão SPG Oásis_`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
-        }
-
-        function downloadJPEG() {
-            const area = document.getElementById('captureArea');
-            const originalStyle = area.style.borderRadius;
-            area.style.borderRadius = "0";
-            
-            document.getElementById('successActions').classList.add('hidden');
-            
-            html2canvas(area, { scale: 2 }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `RELATORIO_OASIS_${currentRecord.operador}_${currentRecord.data.replace(/\//g, '-')}.jpg`;
-                link.href = canvas.toDataURL("image/jpeg", 0.9);
-                link.click();
-                document.getElementById('successActions').classList.remove('hidden');
-                area.style.borderRadius = originalStyle;
-            });
         }
 
         function resetForm() {
@@ -503,18 +527,13 @@
 
         function exportExcel() {
             const excelData = registros.map(r => ({
-                Data: r.data,
-                Operador: r.operador,
-                Local: r.bloco,
-                Equipamento: r.equip,
-                Manhã: r.m,
-                Tarde: r.t,
-                Total: r.total + 'h'
+                Data: r.data, Operador: r.operador, Local: r.bloco, Equipamento: r.equip,
+                Manhã: r.m, Tarde: r.t, Total: r.total + 'h'
             }));
             const ws = XLSX.utils.json_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Histórico");
-            XLSX.writeFile(wb, "Oasis_Rocadeiras_Relatorio.xlsx");
+            XLSX.writeFile(wb, "Relatorio_Oasis.xlsx");
         }
     </script>
 </body>
