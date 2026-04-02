@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Biblioteca para gerar imagem JPEG -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
@@ -46,15 +45,16 @@
             
             <!-- Formulário -->
             <div class="lg:col-span-5">
-                <div class="bg-white rounded-3xl p-8 card-shadow border border-slate-100">
+                <div class="bg-white rounded-3xl p-8 card-shadow border border-slate-100 sticky top-4">
                     <div class="flex items-center justify-between mb-8">
-                        <h2 class="text-xl font-bold text-slate-800 uppercase tracking-tight">Novo Registro</h2>
+                        <h2 id="formTitle" class="text-xl font-bold text-slate-800 uppercase tracking-tight">Novo Registro</h2>
                         <button onclick="resetForm()" class="text-xs font-bold text-slate-400 hover:text-red-500 flex items-center gap-1 uppercase transition-colors">
                             <i class="fas fa-undo"></i> Limpar
                         </button>
                     </div>
 
                     <form id="mainForm" class="space-y-5">
+                        <input type="hidden" id="editId" value="">
                         <div class="grid grid-cols-1 gap-4">
                             <div class="space-y-1">
                                 <label class="text-[11px] font-black text-slate-400 uppercase ml-1">Data</label>
@@ -140,7 +140,7 @@
                             </div>
                         </div>
 
-                        <button type="button" onclick="showConfirmModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-lg uppercase tracking-widest transition-all">
+                        <button type="button" id="btnSubmit" onclick="showConfirmModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-lg uppercase tracking-widest transition-all">
                             Revisar e Salvar
                         </button>
                     </form>
@@ -151,7 +151,11 @@
             <div class="lg:col-span-7">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-lg font-black text-slate-800 uppercase">Histórico Recente</h2>
-                    <button onclick="exportExcel()" class="bg-white border p-2 px-4 rounded-xl text-slate-600 hover:text-emerald-600 font-bold text-xs shadow-sm"><i class="fas fa-file-excel mr-2"></i> EXCEL</button>
+                    <div class="flex gap-2">
+                        <button onclick="exportExcel()" class="bg-white border p-2 px-4 rounded-xl text-slate-600 hover:text-emerald-600 font-bold text-xs shadow-sm flex items-center">
+                            <i class="fas fa-file-excel mr-2"></i> EXCEL
+                        </button>
+                    </div>
                 </div>
                 <div id="cardsList" class="space-y-4"></div>
             </div>
@@ -245,15 +249,17 @@
             const ti = document.getElementById('t_inicio').value;
             const tf = document.getElementById('t_fim').value;
             
-            // Lógica para nomes customizados
             let operador = document.getElementById('formOperador').value;
-            if (operador === "OUTROS") operador = document.getElementById('outrosOperador').value.toUpperCase() || "OUTROS";
+            let outrosOp = document.getElementById('outrosOperador').value.toUpperCase();
+            if (operador === "OUTROS") operador = outrosOp || "OUTROS";
 
             let equip = document.getElementById('formEquip').value;
-            if (equip === "OUTROS") equip = document.getElementById('outrosEquip').value.toUpperCase() || "OUTROS";
+            let outrosEq = document.getElementById('outrosEquip').value.toUpperCase();
+            if (equip === "OUTROS") equip = outrosEq || "OUTROS";
 
             let bloco = document.getElementById('formBloco').value;
-            if (bloco === "OUTROS") bloco = document.getElementById('outrosBloco').value.toUpperCase() || "OUTROS";
+            let outrosBl = document.getElementById('outrosBloco').value.toUpperCase();
+            if (bloco === "OUTROS") bloco = outrosBl || "OUTROS";
 
             const m_min = diffMinutes(mi, mf);
             const t_min = diffMinutes(ti, tf);
@@ -261,14 +267,25 @@
 
             const data = {
                 data: document.getElementById('formData').value.split('-').reverse().join('/'),
+                rawDate: document.getElementById('formData').value,
                 operador: operador,
                 bloco: bloco,
                 equip: equip,
                 total: total,
                 m: mi && mf ? `${mi} às ${mf}` : "Não trabalhou",
                 t: ti && tf ? `${ti} às ${tf}` : "Não trabalhou",
+                m_inicio: mi,
+                m_fim: mf,
+                t_inicio: ti,
+                t_fim: tf,
                 m_min: m_min,
-                t_min: t_min
+                t_min: t_min,
+                origOperador: document.getElementById('formOperador').value,
+                origEquip: document.getElementById('formEquip').value,
+                origBloco: document.getElementById('formBloco').value,
+                outrosOperador: outrosOp,
+                outrosEquip: outrosEq,
+                outrosBloco: outrosBl
             };
 
             document.getElementById('confirmDataText').innerHTML = `
@@ -300,6 +317,8 @@
             document.getElementById('modalButtons').classList.add('hidden');
             document.getElementById('modalLoading').classList.remove('hidden');
 
+            const editId = document.getElementById('editId').value;
+
             const formData = new URLSearchParams();
             formData.append("Data", currentRecord.data);
             formData.append("Periodo", (currentRecord.m !== "Não trabalhou" && currentRecord.t !== "Não trabalhou") ? "Integral" : (currentRecord.m !== "Não trabalhou" ? "Manhã" : "Tarde"));
@@ -312,6 +331,7 @@
             formData.append("Total minutos Tarde", currentRecord.t_min);
 
             try {
+                // Envio para a Planilha (Google Apps Script)
                 await fetch(WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -319,9 +339,18 @@
                     body: formData.toString()
                 });
 
-                const recordLocal = { ...currentRecord, id: Date.now() };
-                registros.push(recordLocal);
+                if (editId) {
+                    const index = registros.findIndex(r => r.id == editId);
+                    registros[index] = { ...currentRecord, id: Number(editId) };
+                } else {
+                    const recordLocal = { ...currentRecord, id: Date.now() };
+                    registros.push(recordLocal);
+                }
+                
                 localStorage.setItem('oasis_records', JSON.stringify(registros));
+                
+                // Limpa o estado de edição para o próximo não herdar
+                document.getElementById('editId').value = "";
                 
                 document.getElementById('modalLoading').classList.add('hidden');
                 document.getElementById('successActions').classList.remove('hidden');
@@ -333,6 +362,57 @@
             }
         }
 
+        function editRecord(id) {
+            const record = registros.find(r => r.id == id);
+            if (!record) return;
+
+            document.getElementById('editId').value = record.id;
+            document.getElementById('formData').value = record.rawDate;
+            document.getElementById('formOperador').value = record.origOperador || record.operador;
+            document.getElementById('formEquip').value = record.origEquip || record.equip;
+            document.getElementById('formBloco').value = record.origBloco || record.bloco;
+
+            if (record.origOperador === "OUTROS") {
+                document.getElementById('outrosOperador').classList.remove('hidden');
+                document.getElementById('outrosOperador').value = record.outrosOperador || "";
+            } else {
+                document.getElementById('outrosOperador').classList.add('hidden');
+            }
+
+            if (record.origEquip === "OUTROS") {
+                document.getElementById('outrosEquip').classList.remove('hidden');
+                document.getElementById('outrosEquip').value = record.outrosEquip || "";
+            } else {
+                document.getElementById('outrosEquip').classList.add('hidden');
+            }
+
+            if (record.origBloco === "OUTROS") {
+                document.getElementById('outrosBloco').classList.remove('hidden');
+                document.getElementById('outrosBloco').value = record.outrosBloco || "";
+            } else {
+                document.getElementById('outrosBloco').classList.add('hidden');
+            }
+
+            document.getElementById('m_inicio').value = record.m_inicio || "";
+            document.getElementById('m_fim').value = record.m_fim || "";
+            document.getElementById('t_inicio').value = record.t_inicio || "";
+            document.getElementById('t_fim').value = record.t_fim || "";
+
+            document.getElementById('formTitle').innerText = "Editando Registro";
+            document.getElementById('btnSubmit').innerText = "Atualizar e Salvar";
+            document.getElementById('btnSubmit').classList.replace('bg-emerald-600', 'bg-blue-600');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function deleteRecord(id) {
+            if (confirm("Tem certeza que deseja excluir este registro do histórico local?")) {
+                registros = registros.filter(r => r.id != id);
+                localStorage.setItem('oasis_records', JSON.stringify(registros));
+                render();
+            }
+        }
+
         function render() {
             const list = document.getElementById('cardsList');
             if (registros.length === 0) {
@@ -341,8 +421,17 @@
             }
 
             list.innerHTML = registros.slice().reverse().map(r => `
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 card-shadow">
-                    <div class="flex justify-between items-start mb-4">
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 card-shadow relative group">
+                    <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="editRecord(${r.id})" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteRecord(${r.id})" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex justify-between items-start mb-4 pr-16">
                         <div>
                             <span class="bg-slate-100 text-slate-500 text-[10px] font-black px-2 py-1 rounded-md uppercase">${r.data}</span>
                             <h4 class="font-black text-slate-800 text-lg uppercase mt-1 tracking-tight">${r.operador}</h4>
@@ -386,7 +475,7 @@
         function downloadJPEG() {
             const area = document.getElementById('captureArea');
             const originalStyle = area.style.borderRadius;
-            area.style.borderRadius = "0"; // Melhora borda na captura
+            area.style.borderRadius = "0";
             
             document.getElementById('successActions').classList.add('hidden');
             
@@ -402,14 +491,27 @@
 
         function resetForm() {
             document.getElementById('mainForm').reset();
+            document.getElementById('editId').value = "";
             document.getElementById('outrosOperador').classList.add('hidden');
             document.getElementById('outrosEquip').classList.add('hidden');
             document.getElementById('outrosBloco').classList.add('hidden');
             document.getElementById('formData').valueAsDate = new Date();
+            document.getElementById('formTitle').innerText = "Novo Registro";
+            document.getElementById('btnSubmit').innerText = "Revisar e Salvar";
+            document.getElementById('btnSubmit').classList.replace('bg-blue-600', 'bg-emerald-600');
         }
 
         function exportExcel() {
-            const ws = XLSX.utils.json_to_sheet(registros);
+            const excelData = registros.map(r => ({
+                Data: r.data,
+                Operador: r.operador,
+                Local: r.bloco,
+                Equipamento: r.equip,
+                Manhã: r.m,
+                Tarde: r.t,
+                Total: r.total + 'h'
+            }));
+            const ws = XLSX.utils.json_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Histórico");
             XLSX.writeFile(wb, "Oasis_Rocadeiras_Relatorio.xlsx");
