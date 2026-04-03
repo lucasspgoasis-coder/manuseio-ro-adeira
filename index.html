@@ -153,10 +153,13 @@
             <!-- Listagem -->
             <div class="lg:col-span-7">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <h2 class="text-lg font-black text-slate-800 uppercase">Histórico Recente</h2>
+                    <div class="flex flex-col">
+                        <h2 class="text-lg font-black text-slate-800 uppercase">Histórico Ordenado</h2>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase">Ordenado por Local e Equipamento</span>
+                    </div>
                     <div class="flex flex-wrap gap-2">
                         <button onclick="downloadAllAsJPEG()" class="bg-emerald-600 text-white p-2 px-4 rounded-xl font-black text-[10px] shadow-lg shadow-emerald-100 flex items-center uppercase tracking-wider hover:bg-emerald-700 transition-all">
-                            <i class="fas fa-camera mr-2"></i> Gerar Foto do Dia (JPEG)
+                            <i class="fas fa-camera mr-2"></i> Gerar Foto (JPEG)
                         </button>
                         <button onclick="exportExcel()" class="bg-white border border-slate-200 p-2 px-4 rounded-xl text-slate-600 hover:text-emerald-600 font-bold text-[10px] shadow-sm flex items-center uppercase">
                             <i class="fas fa-file-excel mr-2"></i> Excel
@@ -372,6 +375,23 @@
             }
         }
 
+        function getSortedRegistros() {
+            // Ordena primeiro por Bloco e depois por Equipamento
+            return [...registros].sort((a, b) => {
+                const blocoA = a.bloco.toUpperCase();
+                const blocoB = b.bloco.toUpperCase();
+                if (blocoA < blocoB) return -1;
+                if (blocoA > blocoB) return 1;
+
+                const equipA = a.equip.toUpperCase();
+                const equipB = b.equip.toUpperCase();
+                if (equipA < equipB) return -1;
+                if (equipA > equipB) return 1;
+
+                return 0;
+            });
+        }
+
         function render() {
             const list = document.getElementById('cardsList');
             if (registros.length === 0) {
@@ -379,7 +399,9 @@
                 return;
             }
 
-            list.innerHTML = registros.slice().reverse().map(r => `
+            const sortedList = getSortedRegistros();
+
+            list.innerHTML = sortedList.map(r => `
                 <div id="card-${r.id}" class="bg-white p-6 rounded-3xl border border-slate-100 card-shadow relative group overflow-hidden">
                     <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                         <button onclick="editRecord(${r.id})" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Editar">
@@ -425,13 +447,15 @@
             const captureDateText = document.getElementById('captureDate');
             captureList.innerHTML = ''; 
             
-            captureDateText.innerText = `Referente a: ${registros[registros.length-1].data}`;
+            captureDateText.innerText = `Referente a: ${registros[0].data}`;
 
-            registros.slice().reverse().forEach(r => {
+            const sortedList = getSortedRegistros();
+
+            sortedList.forEach(r => {
                 const card = document.getElementById(`card-${r.id}`).cloneNode(true);
                 const btns = card.querySelector('.z-10');
                 if (btns) btns.remove();
-                card.classList.remove('card-shadow');
+                card.classList.remove('card-shadow', 'group'); // remove efeitos de hover na foto
                 card.classList.add('border-slate-200');
                 captureList.appendChild(card);
             });
@@ -446,7 +470,7 @@
                 });
                 
                 const link = document.createElement('a');
-                link.download = `RELATORIO_GERAL_OASIS_${new Date().toLocaleDateString().replace(/\//g, '-')}.jpg`;
+                link.download = `RELATORIO_OASIS_ORDENADO_${new Date().toLocaleDateString().replace(/\//g, '-')}.jpg`;
                 link.href = canvas.toDataURL("image/jpeg", 0.9);
                 link.click();
             } catch (e) {
@@ -519,14 +543,15 @@
         }
 
         function exportExcel() {
-            const excelData = registros.map(r => ({
+            const sortedList = getSortedRegistros();
+            const excelData = sortedList.map(r => ({
                 Data: r.data, Operador: r.operador, Local: r.bloco, Equipamento: r.equip,
                 Manhã: r.m, Tarde: r.t, Total: r.total + 'h'
             }));
             const ws = XLSX.utils.json_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Histórico");
-            XLSX.writeFile(wb, "Relatorio_Oasis.xlsx");
+            XLSX.writeFile(wb, "Relatorio_Oasis_Ordenado.xlsx");
         }
     </script>
 </body>
