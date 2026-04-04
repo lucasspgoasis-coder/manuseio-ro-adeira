@@ -154,12 +154,12 @@
             <div class="lg:col-span-7">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div class="flex flex-col">
-                        <h2 class="text-lg font-black text-slate-800 uppercase">Histórico Local</h2>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase">Dados salvos no navegador</span>
+                        <h2 class="text-lg font-black text-slate-800 uppercase">Histórico Ordenado</h2>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase">Ordenado por Local e Equipamento</span>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button onclick="downloadAllAsJPEG()" class="bg-emerald-600 text-white p-2 px-4 rounded-xl font-black text-[10px] shadow-lg shadow-emerald-100 flex items-center uppercase tracking-wider hover:bg-emerald-700 transition-all">
-                            <i class="fas fa-camera mr-2"></i> Gerar Foto
+                            <i class="fas fa-camera mr-2"></i> Gerar Foto (JPEG)
                         </button>
                         <button onclick="exportExcel()" class="bg-white border border-slate-200 p-2 px-4 rounded-xl text-slate-600 hover:text-emerald-600 font-bold text-[10px] shadow-sm flex items-center uppercase">
                             <i class="fas fa-file-excel mr-2"></i> Excel
@@ -181,7 +181,7 @@
         </div>
     </div>
 
-    <!-- Modal de Confirmação -->
+    <!-- Modal de Checklist / Confirmação -->
     <div id="confirmModal" class="fixed inset-0 z-50 modal-overlay hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden card-shadow">
             <div class="bg-emerald-600 p-6 text-white text-center">
@@ -209,21 +209,22 @@
                             <i class="fab fa-whatsapp text-lg"></i> Compartilhar no WhatsApp
                         </button>
                         <button onclick="closeModal('confirmModal'); resetForm();" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl uppercase text-xs shadow-md">
-                             Próximo Registro
+                             Próximo Bloco
                         </button>
                     </div>
                 </div>
 
                 <div id="modalLoading" class="hidden text-center py-4">
                     <div class="loading-spinner mr-2"></div>
-                    <span class="text-xs font-bold text-slate-500 uppercase">Sincronizando com a Planilha...</span>
+                    <span class="text-xs font-bold text-slate-500 uppercase">Sincronizando...</span>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzphgv7MgQDlkf0fN38Gu5zFQ4An2DalmBJpccVwA_aRw6FqOwooqGiTSY_luv1VN8gsA/exec";
+        // URL ATUALIZADA
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzKp0uFoN5-cn4BmCbK0Zh8yrs8022ch2Jey09urjo-QGUbAzDR43aG0gBuWjjKtgsLlA/exec";
         
         let registros = JSON.parse(localStorage.getItem('oasis_records')) || [];
         let currentRecord = null;
@@ -261,11 +262,6 @@
             return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
         }
 
-        // Função para obter registros ordenados por data (mais recente primeiro)
-        function getSortedRegistros() {
-            return [...registros].sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
-        }
-
         function showConfirmModal() {
             const mi = document.getElementById('m_inicio').value;
             const mf = document.getElementById('m_fim').value;
@@ -273,13 +269,16 @@
             const tf = document.getElementById('t_fim').value;
             
             let operador = document.getElementById('formOperador').value;
-            if (operador === "OUTROS") operador = document.getElementById('outrosOperador').value.toUpperCase();
+            let outrosOp = document.getElementById('outrosOperador').value.toUpperCase();
+            if (operador === "OUTROS") operador = outrosOp || "OUTROS";
 
             let equip = document.getElementById('formEquip').value;
-            if (equip === "OUTROS") equip = document.getElementById('outrosEquip').value.toUpperCase();
+            let outrosEq = document.getElementById('outrosEquip').value.toUpperCase();
+            if (equip === "OUTROS") equip = outrosEq || "OUTROS";
 
             let bloco = document.getElementById('formBloco').value;
-            if (bloco === "OUTROS") bloco = document.getElementById('outrosBloco').value.toUpperCase();
+            let outrosBl = document.getElementById('outrosBloco').value.toUpperCase();
+            if (bloco === "OUTROS") bloco = outrosBl || "OUTROS";
 
             const m_min = diffMinutes(mi, mf);
             const t_min = diffMinutes(ti, tf);
@@ -292,20 +291,20 @@
                 bloco: bloco,
                 equip: equip,
                 total: total,
-                m: mi && mf ? `${mi} às ${mf}` : "---",
-                t: ti && tf ? `${ti} às ${tf}` : "---",
-                m_min: m_min,
-                t_min: t_min,
+                m: mi && mf ? `${mi} às ${mf}` : "Não trabalhou",
+                t: ti && tf ? `${ti} às ${tf}` : "Não trabalhou",
                 m_inicio: mi,
                 m_fim: mf,
                 t_inicio: ti,
                 t_fim: tf,
+                m_min: m_min,
+                t_min: t_min,
                 origOperador: document.getElementById('formOperador').value,
                 origEquip: document.getElementById('formEquip').value,
                 origBloco: document.getElementById('formBloco').value,
-                outrosOperador: document.getElementById('outrosOperador').value,
-                outrosEquip: document.getElementById('outrosEquip').value,
-                outrosBloco: document.getElementById('outrosBloco').value
+                outrosOperador: outrosOp,
+                outrosEquip: outrosEq,
+                outrosBloco: outrosBl
             };
 
             document.getElementById('confirmDataText').innerHTML = `
@@ -339,44 +338,70 @@
 
             const editId = document.getElementById('editId').value;
 
-            // MAPEAMENTO EXATO COM OS TÍTULOS DA SUA PLANILHA (imagem enviada)
-            const body = new URLSearchParams();
-            body.append("Data", currentRecord.data);
-            body.append("Operador", currentRecord.operador);
-            body.append("Local", currentRecord.bloco);
-            body.append("Equipamento", currentRecord.equip);
-            body.append("Horário Manhã", currentRecord.m);
-            body.append("Horário Tarde", currentRecord.t);
-            body.append("Total", currentRecord.total + "h");
+            // Mapeamento exato dos nomes esperados pela planilha
+            const formData = new URLSearchParams();
+            formData.append("Data", currentRecord.data);
+            formData.append("Periodo", (currentRecord.m !== "Não trabalhou" && currentRecord.t !== "Não trabalhou") ? "Integral" : (currentRecord.m !== "Não trabalhou" ? "Manhã" : "Tarde"));
+            formData.append("Operador", currentRecord.operador);
+            formData.append("Equipamento", currentRecord.equip);
+            formData.append("Localização", currentRecord.bloco);
+            formData.append("Horário manhã", currentRecord.m);
+            formData.append("Horário Tarde", currentRecord.t);
+            formData.append("Total minutos Manhã", currentRecord.m_min);
+            formData.append("Total minutos Tarde", currentRecord.t_min);
 
             try {
+                // Tenta enviar para o Google Sheets
                 await fetch(WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    cache: 'no-cache',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: body.toString()
+                    body: formData.toString()
                 });
 
+                // Atualiza/Salva localmente
                 if (editId) {
                     const index = registros.findIndex(r => r.id == editId);
                     registros[index] = { ...currentRecord, id: Number(editId) };
                 } else {
                     const recordLocal = { ...currentRecord, id: Date.now() };
-                    registros.unshift(recordLocal);
+                    registros.push(recordLocal);
                 }
                 
+                localStorage.setItem('oasis_records', JSON.stringify(registros));
+                document.getElementById('editId').value = "";
+                document.getElementById('modalLoading').classList.add('hidden');
+                document.getElementById('successActions').classList.remove('hidden');
+                render();
+            } catch (e) {
+                console.error("Erro no envio:", e);
+                alert("Erro ao enviar para a nuvem. O registro será salvo apenas no celular.");
+                
+                // Salva local mesmo se der erro no fetch
+                const recordLocal = { ...currentRecord, id: Date.now() };
+                registros.push(recordLocal);
                 localStorage.setItem('oasis_records', JSON.stringify(registros));
                 
                 document.getElementById('modalLoading').classList.add('hidden');
                 document.getElementById('successActions').classList.remove('hidden');
                 render();
-            } catch (error) {
-                console.error("Erro no envio:", error);
-                alert("Erro de conexão. Verifique se o Script do Google está ativo.");
-                document.getElementById('modalButtons').classList.remove('hidden');
-                document.getElementById('modalLoading').classList.add('hidden');
             }
+        }
+
+        function getSortedRegistros() {
+            return [...registros].sort((a, b) => {
+                const blocoA = a.bloco.toUpperCase();
+                const blocoB = b.bloco.toUpperCase();
+                if (blocoA < blocoB) return -1;
+                if (blocoA > blocoB) return 1;
+
+                const equipA = a.equip.toUpperCase();
+                const equipB = b.equip.toUpperCase();
+                if (equipA < equipB) return -1;
+                if (equipA > equipB) return 1;
+
+                return 0;
+            });
         }
 
         function render() {
@@ -391,10 +416,10 @@
             list.innerHTML = sortedList.map(r => `
                 <div id="card-${r.id}" class="bg-white p-6 rounded-3xl border border-slate-100 card-shadow relative group overflow-hidden">
                     <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        <button onclick="editRecord(${r.id})" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
+                        <button onclick="editRecord(${r.id})" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteRecord(${r.id})" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+                        <button onclick="deleteRecord(${r.id})" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Excluir">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -420,7 +445,7 @@
                         </div>
                     </div>
                     <div class="mt-4 pt-3 border-t border-emerald-100 flex justify-between items-center">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tempo Total</span>
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tempo</span>
                         <span class="text-xl font-black text-emerald-600">${r.total}h</span>
                     </div>
                 </div>
@@ -428,13 +453,16 @@
         }
 
         async function downloadAllAsJPEG() {
-            if (registros.length === 0) return alert("Não há registros.");
+            if (registros.length === 0) return alert("Não há registros para exportar.");
+            
             const captureList = document.getElementById('captureList');
             const captureDateText = document.getElementById('captureDate');
             captureList.innerHTML = ''; 
-            captureDateText.innerText = `Gerado em: ${new Date().toLocaleString()}`;
             
+            captureDateText.innerText = `Referente a: ${registros[0].data}`;
+
             const sortedList = getSortedRegistros();
+
             sortedList.forEach(r => {
                 const card = document.getElementById(`card-${r.id}`).cloneNode(true);
                 const btns = card.querySelector('.z-10');
@@ -443,42 +471,58 @@
                 card.classList.add('border-slate-200');
                 captureList.appendChild(card);
             });
+
             const container = document.getElementById('captureContainer');
+            
             try {
-                const canvas = await html2canvas(container, { scale: 2, useCORS: true });
+                const canvas = await html2canvas(container, { 
+                    scale: 2, 
+                    useCORS: true,
+                    backgroundColor: '#f8fafc'
+                });
+                
                 const link = document.createElement('a');
-                link.download = `Relatorio_Oasis_${Date.now()}.jpg`;
+                link.download = `RELATORIO_OASIS_${new Date().toLocaleDateString().replace(/\//g, '-')}.jpg`;
                 link.href = canvas.toDataURL("image/jpeg", 0.9);
                 link.click();
-            } catch (e) { alert("Erro ao gerar imagem."); }
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao gerar imagem.");
+            }
         }
 
         function editRecord(id) {
             const record = registros.find(r => r.id == id);
             if (!record) return;
+
             document.getElementById('editId').value = record.id;
             document.getElementById('formData').value = record.rawDate;
-            document.getElementById('formOperador').value = record.origOperador;
-            document.getElementById('formEquip').value = record.origEquip;
-            document.getElementById('formBloco').value = record.origBloco;
+            document.getElementById('formOperador').value = record.origOperador || record.operador;
+            document.getElementById('formEquip').value = record.origEquip || record.equip;
+            document.getElementById('formBloco').value = record.origBloco || record.bloco;
+
             toggleOthers('formOperador', 'outrosOperador');
             toggleOthers('formEquip', 'outrosEquip');
             toggleOthers('formBloco', 'outrosBloco');
+
             if (record.origOperador === "OUTROS") document.getElementById('outrosOperador').value = record.outrosOperador;
             if (record.origEquip === "OUTROS") document.getElementById('outrosEquip').value = record.outrosEquip;
             if (record.origBloco === "OUTROS") document.getElementById('outrosBloco').value = record.outrosBloco;
+
             document.getElementById('m_inicio').value = record.m_inicio || "";
             document.getElementById('m_fim').value = record.m_fim || "";
             document.getElementById('t_inicio').value = record.t_inicio || "";
             document.getElementById('t_fim').value = record.t_fim || "";
+
             document.getElementById('formTitle').innerText = "Editando Registro";
             document.getElementById('btnSubmit').innerText = "Atualizar Dados";
             document.getElementById('btnSubmit').classList.replace('bg-emerald-600', 'bg-blue-600');
+            
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function deleteRecord(id) {
-            if (confirm("Excluir este registro?")) {
+            if (confirm("Excluir do histórico local? (Não apaga da planilha online)")) {
                 registros = registros.filter(r => r.id != id);
                 localStorage.setItem('oasis_records', JSON.stringify(registros));
                 render();
@@ -486,7 +530,15 @@
         }
 
         function sendWhatsapp() {
-            const text = `*RELATÓRIO OÁSIS*\n\n📅 *Data:* ${currentRecord.data}\n👤 *Operador:* ${currentRecord.operador}\n📍 *Local:* ${currentRecord.bloco}\n⚙️ *Equipamento:* ${currentRecord.equip}\n🌅 *Manhã:* ${currentRecord.m}\n🌇 *Tarde:* ${currentRecord.t}\n⏳ *TOTAL:* ${currentRecord.total}h`;
+            const text = `*RELATÓRIO OÁSIS - ROÇADEIRA*\n\n` +
+                         `📅 *Data:* ${currentRecord.data}\n` +
+                         `👤 *Operador:* ${currentRecord.operador}\n` +
+                         `📍 *Local:* ${currentRecord.bloco}\n` +
+                         `⚙️ *Equipamento:* ${currentRecord.equip}\n\n` +
+                         `🌅 *Manhã:* ${currentRecord.m}\n` +
+                         `🌇 *Tarde:* ${currentRecord.t}\n\n` +
+                         `⏳ *TOTAL:* ${currentRecord.total}h\n\n` +
+                         `_Sistema de Gestão SPG Oásis_`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
         }
 
@@ -499,7 +551,8 @@
             document.getElementById('formData').valueAsDate = new Date();
             document.getElementById('formTitle').innerText = "Novo Registro";
             document.getElementById('btnSubmit').innerText = "Revisar e Salvar";
-            document.getElementById('btnSubmit').classList.replace('bg-blue-600', 'bg-emerald-600');
+            document.getElementById('btnSubmit').classList.add('bg-emerald-600');
+            document.getElementById('btnSubmit').classList.remove('bg-blue-600');
         }
 
         function exportExcel() {
@@ -511,7 +564,7 @@
             const ws = XLSX.utils.json_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Histórico");
-            XLSX.writeFile(wb, "Relatorio_Oasis.xlsx");
+            XLSX.writeFile(wb, `Relatorio_Oasis_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`);
         }
     </script>
 </body>
