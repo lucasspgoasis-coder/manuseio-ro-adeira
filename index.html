@@ -223,7 +223,7 @@
     </div>
 
     <script>
-        // --- CONFIGURAÇÃO ---
+        // URL DO SEU SCRIPT GOOGLE
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxQgPyAKlDqx_gllFnBkpWfHUF5NQr9btmiXxeugi3e54l-iPQ-T5mQVEHdmoVRNZHrbQ/exec";
         
         let registros = JSON.parse(localStorage.getItem('oasis_records')) || [];
@@ -277,11 +277,6 @@
             let bloco = document.getElementById('formBloco').value;
             if (bloco === "OUTROS") bloco = document.getElementById('outrosBloco').value.toUpperCase();
 
-            if(!operador || !equip || !bloco) {
-                alert("Por favor, preencha todos os campos obrigatórios.");
-                return;
-            }
-
             const m_min = diffMinutes(mi, mf);
             const t_min = diffMinutes(ti, tf);
             const total = formatTimeFromMin(m_min + t_min);
@@ -295,12 +290,12 @@
                 total: total,
                 m: mi && mf ? `${mi} às ${mf}` : "Não trabalhou",
                 t: ti && tf ? `${ti} às ${tf}` : "Não trabalhou",
+                m_min: m_min,
+                t_min: t_min,
                 m_inicio: mi,
                 m_fim: mf,
                 t_inicio: ti,
                 t_fim: tf,
-                m_min: m_min,
-                t_min: t_min,
                 origOperador: document.getElementById('formOperador').value,
                 origEquip: document.getElementById('formEquip').value,
                 origBloco: document.getElementById('formBloco').value,
@@ -341,45 +336,45 @@
             const editId = document.getElementById('editId').value;
             const periodo = (currentRecord.m_min > 0 && currentRecord.t_min > 0) ? "Integral" : (currentRecord.m_min > 0 ? "Manhã" : "Tarde");
 
-            // Criando FormData para garantir compatibilidade total com o Script do Google
-            const formData = new FormData();
-            formData.append("Data", currentRecord.data);
-            formData.append("Periodo", periodo);
-            formData.append("Operador", currentRecord.operador);
-            formData.append("Equipamento", currentRecord.equip);
-            formData.append("Localização", currentRecord.bloco);
-            formData.append("Horário manhã", currentRecord.m);
-            formData.append("Horário Tarde", currentRecord.t);
-            formData.append("Total minutos Manhã", currentRecord.m_min);
-            formData.append("Total minutos Tarde", currentRecord.t_min);
+            // AJUSTE CRÍTICO: Nomes das chaves EXATAMENTE iguais à planilha da imagem
+            const body = new URLSearchParams();
+            body.append("Data", currentRecord.data);
+            body.append("Periodo", periodo);
+            body.append("Operador", currentRecord.operador);
+            body.append("Equipamento", currentRecord.equip);
+            body.append("Localização", currentRecord.bloco);
+            body.append("Horário Manhã", currentRecord.m); // 'M' maiúsculo conforme imagem
+            body.append("Horário Tarde", currentRecord.t); // 'T' maiúsculo conforme imagem
+            body.append("Total minutos Manhã", currentRecord.m_min);
+            body.append("Total minutos Tarde", currentRecord.t_min);
 
             try {
-                // Usando a técnica de fetch com redirecionamento para o Script do Google
+                // Envio usando POST com no-cors (padrão para Scripts do Google sem servidor intermediário)
                 await fetch(WEB_APP_URL, {
                     method: 'POST',
-                    body: formData,
-                    mode: 'no-cors' // Mantido no-cors pois Scripts do Google não retornam headers de CORS corretamente
+                    mode: 'no-cors',
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body.toString()
                 });
 
-                // Se chegou aqui, consideramos sucesso (no-cors não permite ler a resposta, mas o envio ocorre)
+                // Como no-cors não permite ler a resposta, assumimos sucesso se não houver erro de rede
                 if (editId) {
                     const index = registros.findIndex(r => r.id == editId);
                     registros[index] = { ...currentRecord, id: Number(editId) };
                 } else {
                     const recordLocal = { ...currentRecord, id: Date.now() };
-                    registros.unshift(recordLocal); // Adiciona no início da lista
+                    registros.unshift(recordLocal);
                 }
                 
                 localStorage.setItem('oasis_records', JSON.stringify(registros));
                 
-                // Feedback visual de sucesso
                 document.getElementById('modalLoading').classList.add('hidden');
                 document.getElementById('successActions').classList.remove('hidden');
                 render();
-                
             } catch (error) {
-                console.error("Erro no envio:", error);
-                alert("Falha na conexão. Verifique sua internet ou a URL do script.");
+                console.error("Erro no fetch:", error);
+                alert("Falha de conexão ao enviar para a planilha.");
                 document.getElementById('modalButtons').classList.remove('hidden');
                 document.getElementById('modalLoading').classList.add('hidden');
             }
@@ -432,14 +427,11 @@
         }
 
         async function downloadAllAsJPEG() {
-            if (registros.length === 0) return alert("Não há registros para exportar.");
-            
+            if (registros.length === 0) return alert("Não há registros.");
             const captureList = document.getElementById('captureList');
             const captureDateText = document.getElementById('captureDate');
             captureList.innerHTML = ''; 
-            
             captureDateText.innerText = `Gerado em: ${new Date().toLocaleString()}`;
-
             registros.forEach(r => {
                 const card = document.getElementById(`card-${r.id}`).cloneNode(true);
                 const btns = card.querySelector('.z-10');
@@ -448,47 +440,37 @@
                 card.classList.add('border-slate-200');
                 captureList.appendChild(card);
             });
-
             const container = document.getElementById('captureContainer');
-            
             try {
                 const canvas = await html2canvas(container, { scale: 2, useCORS: true });
                 const link = document.createElement('a');
-                link.download = `Relatorio_Oasis_${new Date().getTime()}.jpg`;
+                link.download = `Relatorio_Oasis_${Date.now()}.jpg`;
                 link.href = canvas.toDataURL("image/jpeg", 0.9);
                 link.click();
-            } catch (e) {
-                alert("Erro ao gerar imagem.");
-            }
+            } catch (e) { alert("Erro ao gerar imagem."); }
         }
 
         function editRecord(id) {
             const record = registros.find(r => r.id == id);
             if (!record) return;
-
             document.getElementById('editId').value = record.id;
             document.getElementById('formData').value = record.rawDate;
             document.getElementById('formOperador').value = record.origOperador;
             document.getElementById('formEquip').value = record.origEquip;
             document.getElementById('formBloco').value = record.origBloco;
-
             toggleOthers('formOperador', 'outrosOperador');
             toggleOthers('formEquip', 'outrosEquip');
             toggleOthers('formBloco', 'outrosBloco');
-
             if (record.origOperador === "OUTROS") document.getElementById('outrosOperador').value = record.outrosOperador;
             if (record.origEquip === "OUTROS") document.getElementById('outrosEquip').value = record.outrosEquip;
             if (record.origBloco === "OUTROS") document.getElementById('outrosBloco').value = record.outrosBloco;
-
             document.getElementById('m_inicio').value = record.m_inicio || "";
             document.getElementById('m_fim').value = record.m_fim || "";
             document.getElementById('t_inicio').value = record.t_inicio || "";
             document.getElementById('t_fim').value = record.t_fim || "";
-
             document.getElementById('formTitle').innerText = "Editando Registro";
             document.getElementById('btnSubmit').innerText = "Atualizar Dados";
             document.getElementById('btnSubmit').classList.replace('bg-emerald-600', 'bg-blue-600');
-            
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -501,15 +483,7 @@
         }
 
         function sendWhatsapp() {
-            const text = `*RELATÓRIO OÁSIS - ROÇADEIRA*\n\n` +
-                         `📅 *Data:* ${currentRecord.data}\n` +
-                         `👤 *Operador:* ${currentRecord.operador}\n` +
-                         `📍 *Local:* ${currentRecord.bloco}\n` +
-                         `⚙️ *Equipamento:* ${currentRecord.equip}\n\n` +
-                         `🌅 *Manhã:* ${currentRecord.m}\n` +
-                         `🌇 *Tarde:* ${currentRecord.t}\n\n` +
-                         `⏳ *TOTAL:* ${currentRecord.total}h\n\n` +
-                         `_Gestão SPG Oásis_`;
+            const text = `*RELATÓRIO OÁSIS*\n\n📅 *Data:* ${currentRecord.data}\n👤 *Operador:* ${currentRecord.operador}\n📍 *Local:* ${currentRecord.bloco}\n⚙️ *Equipamento:* ${currentRecord.equip}\n🌅 *Manhã:* ${currentRecord.m}\n🌇 *Tarde:* ${currentRecord.t}\n⏳ *TOTAL:* ${currentRecord.total}h`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
         }
 
