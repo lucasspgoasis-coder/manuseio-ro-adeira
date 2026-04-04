@@ -223,8 +223,8 @@
     </div>
 
     <script>
-        // URL DO SEU SCRIPT GOOGLE
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxQgPyAKlDqx_gllFnBkpWfHUF5NQr9btmiXxeugi3e54l-iPQ-T5mQVEHdmoVRNZHrbQ/exec";
+        // URL ATUALIZADA DO SCRIPT GOOGLE
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzphgv7MgQDlkf0fN38Gu5zFQ4An2DalmBJpccVwA_aRw6FqOwooqGiTSY_luv1VN8gsA/exec";
         
         let registros = JSON.parse(localStorage.getItem('oasis_records')) || [];
         let currentRecord = null;
@@ -336,20 +336,20 @@
             const editId = document.getElementById('editId').value;
             const periodo = (currentRecord.m_min > 0 && currentRecord.t_min > 0) ? "Integral" : (currentRecord.m_min > 0 ? "Manhã" : "Tarde");
 
-            // AJUSTE CRÍTICO: Nomes das chaves EXATAMENTE iguais à planilha da imagem
+            // Mapeamento exato para as colunas do Google Sheets conforme imagem enviada anteriormente
             const body = new URLSearchParams();
             body.append("Data", currentRecord.data);
             body.append("Periodo", periodo);
             body.append("Operador", currentRecord.operador);
             body.append("Equipamento", currentRecord.equip);
             body.append("Localização", currentRecord.bloco);
-            body.append("Horário Manhã", currentRecord.m); // 'M' maiúsculo conforme imagem
-            body.append("Horário Tarde", currentRecord.t); // 'T' maiúsculo conforme imagem
+            body.append("Horário Manhã", currentRecord.m);
+            body.append("Horário Tarde", currentRecord.t);
             body.append("Total minutos Manhã", currentRecord.m_min);
             body.append("Total minutos Tarde", currentRecord.t_min);
 
             try {
-                // Envio usando POST com no-cors (padrão para Scripts do Google sem servidor intermediário)
+                // Envio usando modo no-cors para evitar erros de pré-verificação do navegador
                 await fetch(WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -358,7 +358,7 @@
                     body: body.toString()
                 });
 
-                // Como no-cors não permite ler a resposta, assumimos sucesso se não houver erro de rede
+                // Persistência Local
                 if (editId) {
                     const index = registros.findIndex(r => r.id == editId);
                     registros[index] = { ...currentRecord, id: Number(editId) };
@@ -373,8 +373,8 @@
                 document.getElementById('successActions').classList.remove('hidden');
                 render();
             } catch (error) {
-                console.error("Erro no fetch:", error);
-                alert("Falha de conexão ao enviar para a planilha.");
+                console.error("Erro no envio:", error);
+                alert("Erro de conexão. Verifique se o Script do Google está ativo.");
                 document.getElementById('modalButtons').classList.remove('hidden');
                 document.getElementById('modalLoading').classList.add('hidden');
             }
@@ -419,7 +419,7 @@
                         </div>
                     </div>
                     <div class="mt-4 pt-3 border-t border-emerald-100 flex justify-between items-center">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tempo</span>
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tempo Total</span>
                         <span class="text-xl font-black text-emerald-600">${r.total}h</span>
                     </div>
                 </div>
@@ -475,7 +475,7 @@
         }
 
         function deleteRecord(id) {
-            if (confirm("Excluir registro local?")) {
+            if (confirm("Excluir este registro?")) {
                 registros = registros.filter(r => r.id != id);
                 localStorage.setItem('oasis_records', JSON.stringify(registros));
                 render();
