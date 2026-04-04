@@ -154,12 +154,12 @@
             <div class="lg:col-span-7">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div class="flex flex-col">
-                        <h2 class="text-lg font-black text-slate-800 uppercase">Histórico Ordenado</h2>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase">Ordenado por Local e Equipamento</span>
+                        <h2 class="text-lg font-black text-slate-800 uppercase">Histórico Local</h2>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase">Dados salvos no navegador</span>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button onclick="downloadAllAsJPEG()" class="bg-emerald-600 text-white p-2 px-4 rounded-xl font-black text-[10px] shadow-lg shadow-emerald-100 flex items-center uppercase tracking-wider hover:bg-emerald-700 transition-all">
-                            <i class="fas fa-camera mr-2"></i> Gerar Foto (JPEG)
+                            <i class="fas fa-camera mr-2"></i> Gerar Foto
                         </button>
                         <button onclick="exportExcel()" class="bg-white border border-slate-200 p-2 px-4 rounded-xl text-slate-600 hover:text-emerald-600 font-bold text-[10px] shadow-sm flex items-center uppercase">
                             <i class="fas fa-file-excel mr-2"></i> Excel
@@ -181,7 +181,7 @@
         </div>
     </div>
 
-    <!-- Modal de Checklist / Confirmação -->
+    <!-- Modal de Confirmação -->
     <div id="confirmModal" class="fixed inset-0 z-50 modal-overlay hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden card-shadow">
             <div class="bg-emerald-600 p-6 text-white text-center">
@@ -209,21 +209,23 @@
                             <i class="fab fa-whatsapp text-lg"></i> Compartilhar no WhatsApp
                         </button>
                         <button onclick="closeModal('confirmModal'); resetForm();" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl uppercase text-xs shadow-md">
-                             Próximo Bloco
+                             Próximo Registro
                         </button>
                     </div>
                 </div>
 
                 <div id="modalLoading" class="hidden text-center py-4">
                     <div class="loading-spinner mr-2"></div>
-                    <span class="text-xs font-bold text-slate-500 uppercase">Sincronizando...</span>
+                    <span class="text-xs font-bold text-slate-500 uppercase">Sincronizando com a Planilha...</span>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        // --- CONFIGURAÇÃO ---
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxQgPyAKlDqx_gllFnBkpWfHUF5NQr9btmiXxeugi3e54l-iPQ-T5mQVEHdmoVRNZHrbQ/exec";
+        
         let registros = JSON.parse(localStorage.getItem('oasis_records')) || [];
         let currentRecord = null;
 
@@ -267,16 +269,18 @@
             const tf = document.getElementById('t_fim').value;
             
             let operador = document.getElementById('formOperador').value;
-            let outrosOp = document.getElementById('outrosOperador').value.toUpperCase();
-            if (operador === "OUTROS") operador = outrosOp || "OUTROS";
+            if (operador === "OUTROS") operador = document.getElementById('outrosOperador').value.toUpperCase();
 
             let equip = document.getElementById('formEquip').value;
-            let outrosEq = document.getElementById('outrosEquip').value.toUpperCase();
-            if (equip === "OUTROS") equip = outrosEq || "OUTROS";
+            if (equip === "OUTROS") equip = document.getElementById('outrosEquip').value.toUpperCase();
 
             let bloco = document.getElementById('formBloco').value;
-            let outrosBl = document.getElementById('outrosBloco').value.toUpperCase();
-            if (bloco === "OUTROS") bloco = outrosBl || "OUTROS";
+            if (bloco === "OUTROS") bloco = document.getElementById('outrosBloco').value.toUpperCase();
+
+            if(!operador || !equip || !bloco) {
+                alert("Por favor, preencha todos os campos obrigatórios.");
+                return;
+            }
 
             const m_min = diffMinutes(mi, mf);
             const t_min = diffMinutes(ti, tf);
@@ -300,9 +304,9 @@
                 origOperador: document.getElementById('formOperador').value,
                 origEquip: document.getElementById('formEquip').value,
                 origBloco: document.getElementById('formBloco').value,
-                outrosOperador: outrosOp,
-                outrosEquip: outrosEq,
-                outrosBloco: outrosBl
+                outrosOperador: document.getElementById('outrosOperador').value,
+                outrosEquip: document.getElementById('outrosEquip').value,
+                outrosBloco: document.getElementById('outrosBloco').value
             };
 
             document.getElementById('confirmDataText').innerHTML = `
@@ -335,10 +339,12 @@
             document.getElementById('modalLoading').classList.remove('hidden');
 
             const editId = document.getElementById('editId').value;
+            const periodo = (currentRecord.m_min > 0 && currentRecord.t_min > 0) ? "Integral" : (currentRecord.m_min > 0 ? "Manhã" : "Tarde");
 
-            const formData = new URLSearchParams();
+            // Criando FormData para garantir compatibilidade total com o Script do Google
+            const formData = new FormData();
             formData.append("Data", currentRecord.data);
-            formData.append("Periodo", (currentRecord.m !== "Não trabalhou" && currentRecord.t !== "Não trabalhou") ? "Integral" : (currentRecord.m !== "Não trabalhou" ? "Manhã" : "Tarde"));
+            formData.append("Periodo", periodo);
             formData.append("Operador", currentRecord.operador);
             formData.append("Equipamento", currentRecord.equip);
             formData.append("Localização", currentRecord.bloco);
@@ -348,48 +354,35 @@
             formData.append("Total minutos Tarde", currentRecord.t_min);
 
             try {
+                // Usando a técnica de fetch com redirecionamento para o Script do Google
                 await fetch(WEB_APP_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formData.toString()
+                    body: formData,
+                    mode: 'no-cors' // Mantido no-cors pois Scripts do Google não retornam headers de CORS corretamente
                 });
 
+                // Se chegou aqui, consideramos sucesso (no-cors não permite ler a resposta, mas o envio ocorre)
                 if (editId) {
                     const index = registros.findIndex(r => r.id == editId);
                     registros[index] = { ...currentRecord, id: Number(editId) };
                 } else {
                     const recordLocal = { ...currentRecord, id: Date.now() };
-                    registros.push(recordLocal);
+                    registros.unshift(recordLocal); // Adiciona no início da lista
                 }
                 
                 localStorage.setItem('oasis_records', JSON.stringify(registros));
-                document.getElementById('editId').value = "";
+                
+                // Feedback visual de sucesso
                 document.getElementById('modalLoading').classList.add('hidden');
                 document.getElementById('successActions').classList.remove('hidden');
                 render();
-            } catch (e) {
-                alert("Erro ao enviar. Tente novamente.");
+                
+            } catch (error) {
+                console.error("Erro no envio:", error);
+                alert("Falha na conexão. Verifique sua internet ou a URL do script.");
                 document.getElementById('modalButtons').classList.remove('hidden');
                 document.getElementById('modalLoading').classList.add('hidden');
             }
-        }
-
-        function getSortedRegistros() {
-            // Ordena primeiro por Bloco e depois por Equipamento
-            return [...registros].sort((a, b) => {
-                const blocoA = a.bloco.toUpperCase();
-                const blocoB = b.bloco.toUpperCase();
-                if (blocoA < blocoB) return -1;
-                if (blocoA > blocoB) return 1;
-
-                const equipA = a.equip.toUpperCase();
-                const equipB = b.equip.toUpperCase();
-                if (equipA < equipB) return -1;
-                if (equipA > equipB) return 1;
-
-                return 0;
-            });
         }
 
         function render() {
@@ -399,15 +392,13 @@
                 return;
             }
 
-            const sortedList = getSortedRegistros();
-
-            list.innerHTML = sortedList.map(r => `
+            list.innerHTML = registros.map(r => `
                 <div id="card-${r.id}" class="bg-white p-6 rounded-3xl border border-slate-100 card-shadow relative group overflow-hidden">
                     <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        <button onclick="editRecord(${r.id})" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Editar">
+                        <button onclick="editRecord(${r.id})" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteRecord(${r.id})" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Excluir">
+                        <button onclick="deleteRecord(${r.id})" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -447,15 +438,13 @@
             const captureDateText = document.getElementById('captureDate');
             captureList.innerHTML = ''; 
             
-            captureDateText.innerText = `Referente a: ${registros[0].data}`;
+            captureDateText.innerText = `Gerado em: ${new Date().toLocaleString()}`;
 
-            const sortedList = getSortedRegistros();
-
-            sortedList.forEach(r => {
+            registros.forEach(r => {
                 const card = document.getElementById(`card-${r.id}`).cloneNode(true);
                 const btns = card.querySelector('.z-10');
                 if (btns) btns.remove();
-                card.classList.remove('card-shadow', 'group'); // remove efeitos de hover na foto
+                card.classList.remove('card-shadow', 'group');
                 card.classList.add('border-slate-200');
                 captureList.appendChild(card);
             });
@@ -463,18 +452,12 @@
             const container = document.getElementById('captureContainer');
             
             try {
-                const canvas = await html2canvas(container, { 
-                    scale: 2, 
-                    useCORS: true,
-                    backgroundColor: '#f8fafc'
-                });
-                
+                const canvas = await html2canvas(container, { scale: 2, useCORS: true });
                 const link = document.createElement('a');
-                link.download = `RELATORIO_OASIS_ORDENADO_${new Date().toLocaleDateString().replace(/\//g, '-')}.jpg`;
+                link.download = `Relatorio_Oasis_${new Date().getTime()}.jpg`;
                 link.href = canvas.toDataURL("image/jpeg", 0.9);
                 link.click();
             } catch (e) {
-                console.error(e);
                 alert("Erro ao gerar imagem.");
             }
         }
@@ -485,9 +468,9 @@
 
             document.getElementById('editId').value = record.id;
             document.getElementById('formData').value = record.rawDate;
-            document.getElementById('formOperador').value = record.origOperador || record.operador;
-            document.getElementById('formEquip').value = record.origEquip || record.equip;
-            document.getElementById('formBloco').value = record.origBloco || record.bloco;
+            document.getElementById('formOperador').value = record.origOperador;
+            document.getElementById('formEquip').value = record.origEquip;
+            document.getElementById('formBloco').value = record.origBloco;
 
             toggleOthers('formOperador', 'outrosOperador');
             toggleOthers('formEquip', 'outrosEquip');
@@ -510,7 +493,7 @@
         }
 
         function deleteRecord(id) {
-            if (confirm("Excluir do histórico local?")) {
+            if (confirm("Excluir registro local?")) {
                 registros = registros.filter(r => r.id != id);
                 localStorage.setItem('oasis_records', JSON.stringify(registros));
                 render();
@@ -526,7 +509,7 @@
                          `🌅 *Manhã:* ${currentRecord.m}\n` +
                          `🌇 *Tarde:* ${currentRecord.t}\n\n` +
                          `⏳ *TOTAL:* ${currentRecord.total}h\n\n` +
-                         `_Sistema de Gestão SPG Oásis_`;
+                         `_Gestão SPG Oásis_`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
         }
 
@@ -543,15 +526,14 @@
         }
 
         function exportExcel() {
-            const sortedList = getSortedRegistros();
-            const excelData = sortedList.map(r => ({
+            const excelData = registros.map(r => ({
                 Data: r.data, Operador: r.operador, Local: r.bloco, Equipamento: r.equip,
                 Manhã: r.m, Tarde: r.t, Total: r.total + 'h'
             }));
             const ws = XLSX.utils.json_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Histórico");
-            XLSX.writeFile(wb, "Relatorio_Oasis_Ordenado.xlsx");
+            XLSX.writeFile(wb, "Relatorio_Oasis.xlsx");
         }
     </script>
 </body>
