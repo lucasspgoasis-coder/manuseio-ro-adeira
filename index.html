@@ -223,8 +223,8 @@
     </div>
 
     <script>
-        // URL ATUALIZADA
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzKp0uFoN5-cn4BmCbK0Zh8yrs8022ch2Jey09urjo-QGUbAzDR43aG0gBuWjjKtgsLlA/exec";
+        // URL Atualizada do App Script
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwg-4LS7Hm6ejhX3HXDi1Th_4xsGulsm87xY2Kukon6a4eKLqmIyevu6NjtGaTmc_iM3Q/exec";
         
         let registros = JSON.parse(localStorage.getItem('oasis_records')) || [];
         let currentRecord = null;
@@ -338,10 +338,19 @@
 
             const editId = document.getElementById('editId').value;
 
-            // Mapeamento exato dos nomes esperados pela planilha
+            // Definindo o período baseado nos horários preenchidos
+            let periodoTexto = "Não informado";
+            if (currentRecord.m !== "Não trabalhou" && currentRecord.t !== "Não trabalhou") {
+                periodoTexto = "Integral";
+            } else if (currentRecord.m !== "Não trabalhou") {
+                periodoTexto = "Manhã";
+            } else if (currentRecord.t !== "Não trabalhou") {
+                periodoTexto = "Tarde";
+            }
+
             const formData = new URLSearchParams();
             formData.append("Data", currentRecord.data);
-            formData.append("Periodo", (currentRecord.m !== "Não trabalhou" && currentRecord.t !== "Não trabalhou") ? "Integral" : (currentRecord.m !== "Não trabalhou" ? "Manhã" : "Tarde"));
+            formData.append("Periodo", periodoTexto);
             formData.append("Operador", currentRecord.operador);
             formData.append("Equipamento", currentRecord.equip);
             formData.append("Localização", currentRecord.bloco);
@@ -359,7 +368,7 @@
                     body: formData.toString()
                 });
 
-                // Atualiza/Salva localmente
+                // Atualiza o armazenamento local (Offline/Cache)
                 if (editId) {
                     const index = registros.findIndex(r => r.id == editId);
                     registros[index] = { ...currentRecord, id: Number(editId) };
@@ -374,17 +383,10 @@
                 document.getElementById('successActions').classList.remove('hidden');
                 render();
             } catch (e) {
-                console.error("Erro no envio:", e);
-                alert("Erro ao enviar para a nuvem. O registro será salvo apenas no celular.");
-                
-                // Salva local mesmo se der erro no fetch
-                const recordLocal = { ...currentRecord, id: Date.now() };
-                registros.push(recordLocal);
-                localStorage.setItem('oasis_records', JSON.stringify(registros));
-                
+                console.error(e);
+                alert("Erro ao enviar para a nuvem. O registro ficará salvo apenas no seu celular temporariamente.");
+                document.getElementById('modalButtons').classList.remove('hidden');
                 document.getElementById('modalLoading').classList.add('hidden');
-                document.getElementById('successActions').classList.remove('hidden');
-                render();
             }
         }
 
@@ -522,7 +524,7 @@
         }
 
         function deleteRecord(id) {
-            if (confirm("Excluir do histórico local? (Não apaga da planilha online)")) {
+            if (confirm("Excluir do histórico local?")) {
                 registros = registros.filter(r => r.id != id);
                 localStorage.setItem('oasis_records', JSON.stringify(registros));
                 render();
@@ -551,8 +553,7 @@
             document.getElementById('formData').valueAsDate = new Date();
             document.getElementById('formTitle').innerText = "Novo Registro";
             document.getElementById('btnSubmit').innerText = "Revisar e Salvar";
-            document.getElementById('btnSubmit').classList.add('bg-emerald-600');
-            document.getElementById('btnSubmit').classList.remove('bg-blue-600');
+            document.getElementById('btnSubmit').classList.replace('bg-blue-600', 'bg-emerald-600');
         }
 
         function exportExcel() {
@@ -564,7 +565,7 @@
             const ws = XLSX.utils.json_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Histórico");
-            XLSX.writeFile(wb, `Relatorio_Oasis_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`);
+            XLSX.writeFile(wb, "Relatorio_Oasis_Ordenado.xlsx");
         }
     </script>
 </body>
