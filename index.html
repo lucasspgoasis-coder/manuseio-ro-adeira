@@ -223,7 +223,6 @@
     </div>
 
     <script>
-        // URL ATUALIZADA DO SCRIPT GOOGLE
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzphgv7MgQDlkf0fN38Gu5zFQ4An2DalmBJpccVwA_aRw6FqOwooqGiTSY_luv1VN8gsA/exec";
         
         let registros = JSON.parse(localStorage.getItem('oasis_records')) || [];
@@ -262,6 +261,11 @@
             return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
         }
 
+        // Função para obter registros ordenados por data (mais recente primeiro)
+        function getSortedRegistros() {
+            return [...registros].sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
+        }
+
         function showConfirmModal() {
             const mi = document.getElementById('m_inicio').value;
             const mf = document.getElementById('m_fim').value;
@@ -288,8 +292,8 @@
                 bloco: bloco,
                 equip: equip,
                 total: total,
-                m: mi && mf ? `${mi} às ${mf}` : "Não trabalhou",
-                t: ti && tf ? `${ti} às ${tf}` : "Não trabalhou",
+                m: mi && mf ? `${mi} às ${mf}` : "---",
+                t: ti && tf ? `${ti} às ${tf}` : "---",
                 m_min: m_min,
                 t_min: t_min,
                 m_inicio: mi,
@@ -334,22 +338,18 @@
             document.getElementById('modalLoading').classList.remove('hidden');
 
             const editId = document.getElementById('editId').value;
-            const periodo = (currentRecord.m_min > 0 && currentRecord.t_min > 0) ? "Integral" : (currentRecord.m_min > 0 ? "Manhã" : "Tarde");
 
-            // Mapeamento exato para as colunas do Google Sheets conforme imagem enviada anteriormente
+            // MAPEAMENTO EXATO COM OS TÍTULOS DA SUA PLANILHA (imagem enviada)
             const body = new URLSearchParams();
             body.append("Data", currentRecord.data);
-            body.append("Periodo", periodo);
             body.append("Operador", currentRecord.operador);
+            body.append("Local", currentRecord.bloco);
             body.append("Equipamento", currentRecord.equip);
-            body.append("Localização", currentRecord.bloco);
             body.append("Horário Manhã", currentRecord.m);
             body.append("Horário Tarde", currentRecord.t);
-            body.append("Total minutos Manhã", currentRecord.m_min);
-            body.append("Total minutos Tarde", currentRecord.t_min);
+            body.append("Total", currentRecord.total + "h");
 
             try {
-                // Envio usando modo no-cors para evitar erros de pré-verificação do navegador
                 await fetch(WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -358,7 +358,6 @@
                     body: body.toString()
                 });
 
-                // Persistência Local
                 if (editId) {
                     const index = registros.findIndex(r => r.id == editId);
                     registros[index] = { ...currentRecord, id: Number(editId) };
@@ -387,7 +386,9 @@
                 return;
             }
 
-            list.innerHTML = registros.map(r => `
+            const sortedList = getSortedRegistros();
+
+            list.innerHTML = sortedList.map(r => `
                 <div id="card-${r.id}" class="bg-white p-6 rounded-3xl border border-slate-100 card-shadow relative group overflow-hidden">
                     <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                         <button onclick="editRecord(${r.id})" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
@@ -432,7 +433,9 @@
             const captureDateText = document.getElementById('captureDate');
             captureList.innerHTML = ''; 
             captureDateText.innerText = `Gerado em: ${new Date().toLocaleString()}`;
-            registros.forEach(r => {
+            
+            const sortedList = getSortedRegistros();
+            sortedList.forEach(r => {
                 const card = document.getElementById(`card-${r.id}`).cloneNode(true);
                 const btns = card.querySelector('.z-10');
                 if (btns) btns.remove();
@@ -500,7 +503,8 @@
         }
 
         function exportExcel() {
-            const excelData = registros.map(r => ({
+            const sortedList = getSortedRegistros();
+            const excelData = sortedList.map(r => ({
                 Data: r.data, Operador: r.operador, Local: r.bloco, Equipamento: r.equip,
                 Manhã: r.m, Tarde: r.t, Total: r.total + 'h'
             }));
