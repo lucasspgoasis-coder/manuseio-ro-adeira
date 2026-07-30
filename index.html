@@ -4,41 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Roçadeiras - SPG Oásis</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- FontAwesome com crossorigin -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- SheetJS (Excel) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- html-to-image para geração de relatórios JPEG em alta resolução -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js" crossorigin="anonymous"></script>
     
+    <!-- Google Fonts com CrossOrigin -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" crossorigin="anonymous">
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .header-bg { background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); }
-        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
-        .modal-overlay { background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
-        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #10b981; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .input-focus { transition: all 0.2s; border: 2px solid transparent; }
-        .input-focus:focus { border-color: #10b981; background-color: white; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8fafc; 
+        }
         
-        #captureContainer { padding: 20px; background: #f8fafc; width: 500px; position: fixed; left: -9999px; }
-        .capture-header { background: #022c22; color: white; padding: 20px; text-align: center; border-radius: 15px 15px 0 0; }
+        .header-bg { 
+            background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); 
+        }
+        
+        .card-shadow { 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); 
+        }
+        
+        .modal-overlay { 
+            background-color: rgba(0,0,0,0.6); 
+            backdrop-filter: blur(4px); 
+        }
+        
+        .loading-spinner { 
+            border: 3px solid #f3f3f3; 
+            border-top: 3px solid #10b981; 
+            border-radius: 50%; 
+            width: 20px; 
+            height: 20px; 
+            animation: spin 1s linear infinite; 
+            display: inline-block; 
+        }
+        
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        
+        .input-focus { 
+            transition: all 0.2s; 
+            border: 2px solid transparent; 
+        }
+        .input-focus:focus { 
+            border-color: #10b981; 
+            background-color: white; 
+        }
+        
+        select, input {
+            text-align: center;
+            text-align-last: center;
+        }
+        
+        /* Container Oculto do Relatório em formato de Folha Vertical para WhatsApp */
+        #reportExportContainer { 
+            width: 720px; 
+            position: absolute; 
+            left: -9999px; 
+            top: 0;
+            background-color: #f1f5f9;
+        }
+        
+        .watermark {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.035;
+            width: 65%;
+            pointer-events: none;
+            z-index: 0;
+        }
     </style>
 </head>
-<body class="min-h-screen pb-20">
+<body class="min-h-screen pb-20 text-slate-800">
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <header class="header-bg text-white py-6 px-6 shadow-xl mb-8">
-        <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
-            <div class="flex items-center gap-4">
-                <div class="bg-emerald-500/20 p-2 md:p-3 rounded-2xl hidden sm:block">
-                    <i class="fas fa-tools text-2xl md:text-3xl text-emerald-400"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg md:text-2xl font-black uppercase tracking-tight leading-tight">Gestão de Roçadeiras</h1>
-                    <p class="text-emerald-200/70 font-medium text-xs md:sm">Oásis • Controle de Operações</p>
-                </div>
-            </div>
+        <div class="max-w-6xl mx-auto flex items-center justify-center md:justify-start gap-4">
             <div class="flex-shrink-0">
-                <img src="https://i.imgur.com/rB1Lk8y.png" alt="Logo Oásis" class="h-12 md:h-16 drop-shadow-md object-contain">
+                <img src="https://i.imgur.com/wEozr34.png" alt="Logo Oásis" class="h-12 md:h-16 drop-shadow-lg object-contain" crossorigin="anonymous">
+            </div>
+            <div class="text-center md:text-left">
+                <h1 class="text-xl md:text-2xl font-black uppercase tracking-tight leading-tight">Gestão de Roçadeiras</h1>
+                <p class="text-emerald-200/70 font-medium text-xs md:text-sm tracking-wider">Oásis • Controle de Operações</p>
             </div>
         </div>
     </header>
@@ -46,7 +107,7 @@
     <main class="max-w-6xl mx-auto px-4">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            <!-- Formulário -->
+            <!-- Form Column -->
             <div class="lg:col-span-5">
                 <div class="bg-white rounded-3xl p-8 card-shadow border border-slate-100 sticky top-4">
                     <div class="flex items-center justify-between mb-8">
@@ -56,17 +117,20 @@
                         </button>
                     </div>
 
-                    <form id="mainForm" class="space-y-5">
+                    <form id="mainForm" class="space-y-6">
                         <input type="hidden" id="editId" value="">
-                        <div class="grid grid-cols-1 gap-4">
-                            <div class="space-y-1">
-                                <label class="text-[11px] font-black text-slate-400 uppercase ml-1">Data</label>
-                                <input type="date" id="formData" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none input-focus">
+                        
+                        <div class="grid grid-cols-1 gap-5">
+                            <!-- Data -->
+                            <div class="flex flex-col items-center space-y-2">
+                                <label class="text-[11px] font-black text-slate-400 uppercase">Data da Operação</label>
+                                <input type="date" id="formData" required class="w-full bg-slate-50 border border-slate-200 rounded-xl h-14 px-4 font-bold text-slate-700 outline-none input-focus flex items-center justify-center">
                             </div>
                             
-                            <div class="space-y-1">
-                                <label class="text-[11px] font-black text-slate-400 uppercase ml-1">Localização</label>
-                                <select id="formBloco" onchange="toggleOthers('formBloco', 'outrosBloco')" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none input-focus">
+                            <!-- Localização -->
+                            <div class="flex flex-col items-center space-y-2">
+                                <label class="text-[11px] font-black text-slate-400 uppercase">Localização / Bloco</label>
+                                <select id="formBloco" onchange="toggleOthers('formBloco', 'outrosBloco')" required class="w-full bg-slate-50 border border-slate-200 rounded-xl h-14 px-4 font-bold text-slate-700 outline-none input-focus">
                                     <optgroup label="Blocos Letras">
                                         <option value="BLOCO A">BLOCO A</option>
                                         <option value="BLOCO B">BLOCO B</option>
@@ -93,91 +157,164 @@
                                         <option value="OUTROS">OUTROS (DIGITAR)</option>
                                     </optgroup>
                                 </select>
-                                <input type="text" id="outrosBloco" placeholder="Qual o Bloco/Local?" class="hidden mt-2 w-full bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 font-bold text-emerald-800 outline-none uppercase">
+                                <input type="text" id="outrosBloco" placeholder="QUAL O BLOCO/LOCAL?" class="hidden w-full bg-emerald-50 border border-emerald-200 rounded-xl h-14 px-4 font-bold text-emerald-800 outline-none uppercase text-center mt-2">
                             </div>
                         </div>
 
-                        <div class="space-y-4">
-                            <div class="grid grid-cols-1 gap-3">
-                                <div class="space-y-1">
-                                    <label class="text-[11px] font-black text-slate-400 uppercase ml-1">Operador</label>
-                                    <select id="formOperador" onchange="toggleOthers('formOperador', 'outrosOperador')" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none input-focus">
-                                        <option value="EDUARDO">EDUARDO</option>
-                                        <option value="JOÃO">JOÃO</option>
-                                        <option value="MESSIAS">MESSIAS</option>
-                                        <option value="ROBERTO">ROBERTO</option>
-                                        <option value="OUTROS">OUTROS (DIGITAR)</option>
-                                    </select>
-                                    <input type="text" id="outrosOperador" placeholder="Nome do Operador" class="hidden mt-2 w-full bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 font-bold text-emerald-800 outline-none uppercase">
-                                </div>
-                                
-                                <div class="space-y-1">
-                                    <label class="text-[11px] font-black text-slate-400 uppercase ml-1">Equipamento</label>
-                                    <select id="formEquip" onchange="toggleOthers('formEquip', 'outrosEquip')" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none input-focus">
-                                        <option value="ROÇADEIRA 01">ROÇADEIRA 01</option>
-                                        <option value="ROÇADEIRA 02">ROÇADEIRA 02</option>
-                                        <option value="ROÇADEIRA 03">ROÇADEIRA 03</option>
-                                        <option value="ROÇADEIRA 04">ROÇADEIRA 04</option>
-                                        <option value="ROÇADEIRA 05">ROÇADEIRA 05</option>
-                                        <option value="OUTROS">OUTROS (DIGITAR)</option>
-                                    </select>
-                                    <input type="text" id="outrosEquip" placeholder="Qual Equipamento?" class="hidden mt-2 w-full bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 font-bold text-emerald-800 outline-none uppercase">
-                                </div>
+                        <div class="grid grid-cols-1 gap-5">
+                            <div class="flex flex-col items-center space-y-2">
+                                <label class="text-[11px] font-black text-slate-400 uppercase">Nome do Operador</label>
+                                <select id="formOperador" onchange="toggleOthers('formOperador', 'outrosOperador')" required class="w-full bg-slate-50 border border-slate-200 rounded-xl h-14 px-4 font-bold text-slate-700 outline-none input-focus">
+                                    <option value="EDUARDO">EDUARDO</option>
+                                    <option value="JOÃO">JOÃO</option>
+                                    <option value="MESSIAS">MESSIAS</option>
+                                    <option value="ROBERTO">ROBERTO</option>
+                                    <option value="OUTROS">OUTROS (DIGITAR)</option>
+                                </select>
+                                <input type="text" id="outrosOperador" placeholder="NOME DO OPERADOR" class="hidden w-full bg-emerald-50 border border-emerald-200 rounded-xl h-14 px-4 font-bold text-emerald-800 outline-none uppercase text-center mt-2">
+                            </div>
+                            
+                            <div class="flex flex-col items-center space-y-2">
+                                <label class="text-[11px] font-black text-slate-400 uppercase">Equipamento Utilizado</label>
+                                <select id="formEquip" onchange="toggleOthers('formEquip', 'outrosEquip')" required class="w-full bg-slate-50 border border-slate-200 rounded-xl h-14 px-4 font-bold text-slate-700 outline-none input-focus">
+                                    <option value="ROÇADEIRA 01">ROÇADEIRA 01</option>
+                                    <option value="ROÇADEIRA 02">ROÇADEIRA 02</option>
+                                    <option value="ROÇADEIRA 03">ROÇADEIRA 03</option>
+                                    <option value="ROÇADEIRA 04">ROÇADEIRA 04</option>
+                                    <option value="ROÇADEIRA 05">ROÇADEIRA 05</option>
+                                    <option value="OUTROS">OUTROS (DIGITAR)</option>
+                                </select>
+                                <input type="text" id="outrosEquip" placeholder="QUAL EQUIPAMENTO?" class="hidden w-full bg-emerald-50 border border-emerald-200 rounded-xl h-14 px-4 font-bold text-emerald-800 outline-none uppercase text-center mt-2">
                             </div>
                         </div>
 
+                        <!-- Turnos (Manhã e Tarde) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                            <div class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
-                                <span class="text-[10px] font-black text-emerald-700 uppercase block mb-2">Horário Manhã</span>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="time" id="m_inicio" class="w-full rounded-lg p-2 text-sm font-bold border border-emerald-200">
-                                    <input type="time" id="m_fim" class="w-full rounded-lg p-2 text-sm font-bold border border-emerald-200">
+                            <div class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 flex flex-col items-center">
+                                <span class="text-[10px] font-black text-emerald-700 uppercase block mb-3 text-center">Horário Manhã</span>
+                                <div class="grid grid-cols-2 gap-3 w-full">
+                                    <div class="flex flex-col items-center">
+                                        <label class="text-[9px] text-emerald-600/70 font-bold uppercase mb-1">Início</label>
+                                        <input type="time" id="m_inicio" class="w-full rounded-xl h-12 text-sm font-bold border border-emerald-200 flex items-center justify-center">
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <label class="text-[9px] text-emerald-600/70 font-bold uppercase mb-1">Fim</label>
+                                        <input type="time" id="m_fim" class="w-full rounded-xl h-12 text-sm font-bold border border-emerald-200 flex items-center justify-center">
+                                    </div>
                                 </div>
                             </div>
-                            <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100">
-                                <span class="text-[10px] font-black text-amber-700 uppercase block mb-2">Horário Tarde</span>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="time" id="t_inicio" class="w-full rounded-lg p-2 text-sm font-bold border border-amber-200">
-                                    <input type="time" id="t_fim" class="w-full rounded-lg p-2 text-sm font-bold border border-amber-200">
+                            
+                            <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100 flex flex-col items-center">
+                                <span class="text-[10px] font-black text-amber-700 uppercase block mb-3 text-center">Horário Tarde</span>
+                                <div class="grid grid-cols-2 gap-3 w-full">
+                                    <div class="flex flex-col items-center">
+                                        <label class="text-[9px] text-amber-600/70 font-bold uppercase mb-1">Início</label>
+                                        <input type="time" id="t_inicio" class="w-full rounded-xl h-12 text-sm font-bold border border-amber-200 flex items-center justify-center">
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <label class="text-[9px] text-amber-600/70 font-bold uppercase mb-1">Fim</label>
+                                        <input type="time" id="t_fim" class="w-full rounded-xl h-12 text-sm font-bold border border-amber-200 flex items-center justify-center">
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <button type="button" id="btnSubmit" onclick="showConfirmModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-lg uppercase tracking-widest transition-all">
+                        <button type="button" id="btnSubmit" onclick="showConfirmModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black h-14 rounded-2xl shadow-lg uppercase tracking-widest transition-all mt-4 flex items-center justify-center">
                             Revisar e Salvar
                         </button>
                     </form>
                 </div>
             </div>
 
-            <!-- Listagem -->
             <div class="lg:col-span-7">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <div class="flex flex-col">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b border-slate-200 pb-4">
+                    <div class="flex flex-col items-center sm:items-start text-center sm:text-left w-full sm:w-auto">
                         <h2 class="text-lg font-black text-slate-800 uppercase">Histórico Ordenado</h2>
                         <span class="text-[9px] font-bold text-slate-400 uppercase">Ordenado por Local e Equipamento</span>
                     </div>
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="downloadAllAsJPEG()" class="bg-emerald-600 text-white p-2 px-4 rounded-xl font-black text-[10px] shadow-lg shadow-emerald-100 flex items-center uppercase tracking-wider hover:bg-emerald-700 transition-all">
-                            <i class="fas fa-camera mr-2"></i> Gerar Foto (JPEG)
+                    <div class="flex flex-wrap justify-center gap-2 w-full sm:w-auto">
+                        <button onclick="downloadReportJPEG()" id="btnDownloadReport" class="bg-emerald-600 text-white py-3 px-5 rounded-xl font-black text-[11px] shadow-lg shadow-emerald-100 flex items-center uppercase tracking-wider hover:bg-emerald-700 transition-all">
+                            <i class="fas fa-file-download mr-2"></i> Baixar Relatório (JPEG)
                         </button>
-                        <button onclick="exportExcel()" class="bg-white border border-slate-200 p-2 px-4 rounded-xl text-slate-600 hover:text-emerald-600 font-bold text-[10px] shadow-sm flex items-center uppercase">
+                        <button onclick="exportExcel()" class="bg-white border border-slate-200 py-3 px-5 rounded-xl text-slate-600 hover:text-emerald-600 font-bold text-[11px] shadow-sm flex items-center uppercase">
                             <i class="fas fa-file-excel mr-2"></i> Excel
                         </button>
                     </div>
                 </div>
+                
                 <div id="cardsList" class="space-y-4"></div>
             </div>
         </div>
     </main>
 
-    <!-- Área Oculta para Captura Unificada -->
-    <div id="captureContainer">
-        <div class="capture-header">
-            <h1 class="font-black uppercase text-xl">Relatório de Operações</h1>
-            <p id="captureDate" class="text-emerald-200 text-xs font-bold"></p>
-        </div>
-        <div id="captureList" class="p-4 space-y-4 bg-slate-50 border-x border-b border-slate-200 rounded-b-2xl">
+    <!-- Folha do Relatório Digital em formato Vertical HD otimizado para WhatsApp -->
+    <div id="reportExportContainer" class="p-6">
+        <div class="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 relative p-8">
+            
+            <!-- Marca d'água -->
+            <img src="https://i.imgur.com/wEozr34.png" class="watermark" alt="" crossorigin="anonymous">
+            
+            <!-- Cabeçalho Oficial do Relatório -->
+            <div class="bg-gradient-to-r from-[#022c22] via-[#064e3b] to-[#022c22] p-8 rounded-2xl text-white relative z-10 shadow-lg border-b-4 border-emerald-500 mb-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-5">
+                        <img src="https://i.imgur.com/wEozr34.png" alt="Logo Oásis" class="h-20 object-contain drop-shadow-xl" crossorigin="anonymous">
+                        <div>
+                            <h1 class="text-2xl font-black uppercase tracking-tight text-white leading-tight">RELATÓRIO OPERACIONAL</h1>
+                            <p class="text-emerald-200/90 font-bold text-xs uppercase tracking-wider mt-1">Controle de Roçadeiras • SPG Oásis</p>
+                        </div>
+                    </div>
+                    <div class="text-right border-l border-emerald-700/60 pl-5">
+                        <span class="text-[10px] font-black text-emerald-300 uppercase tracking-widest block">EMISSÃO</span>
+                        <span id="rptDateBadge" class="text-sm font-extrabold text-white"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumo de Indicadores Rápidos (KPIs) -->
+            <div class="grid grid-cols-4 gap-3 mb-6 relative z-10">
+                <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl text-center">
+                    <span class="text-[9px] font-black text-slate-400 uppercase block mb-1">REGISTROS</span>
+                    <span id="kpiCount" class="text-lg font-black text-slate-800">0</span>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl text-center">
+                    <span class="text-[9px] font-black text-slate-400 uppercase block mb-1">OPERADORES</span>
+                    <span id="kpiOperators" class="text-lg font-black text-slate-800">0</span>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl text-center">
+                    <span class="text-[9px] font-black text-slate-400 uppercase block mb-1">LOCAIS</span>
+                    <span id="kpiLocations" class="text-lg font-black text-slate-800">0</span>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-center">
+                    <span class="text-[9px] font-black text-emerald-600 uppercase block mb-1">TOTAL HORAS</span>
+                    <span id="kpiTotalHours" class="text-lg font-black text-emerald-700">0h</span>
+                </div>
+            </div>
+
+            <!-- Tabela / Lista Organizada para Leitura Fácil no Celular -->
+            <div class="mb-6 relative z-10">
+                <div class="bg-slate-800 text-white p-3 rounded-t-xl flex justify-between items-center text-[10px] font-black uppercase tracking-wider">
+                    <span>Detalhamento dos Trabalhos Realizados</span>
+                    <span id="rptSubHeader">SPG Oásis</span>
+                </div>
+
+                <div id="reportRowsList" class="bg-slate-50/50 border border-slate-200 rounded-b-xl divide-y divide-slate-200/80">
+                    <!-- Registros Injetados via JS -->
+                </div>
+            </div>
+
+            <!-- Rodapé de Autenticidade e Envio -->
+            <div class="bg-white pt-4 border-t border-slate-200 flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-wider relative z-10">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-shield-check text-emerald-600 text-base"></i>
+                    <span>Relatório Oficial de Atividades • SPG Oásis</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fab fa-whatsapp text-emerald-500 text-sm"></i>
+                    <span id="rptTimestamp"></span>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -190,6 +327,7 @@
             </div>
             <div class="p-8 space-y-4">
                 <div id="confirmDataText" class="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-sm space-y-3">
+                    <!-- Preenchido via JS -->
                 </div>
                 
                 <div id="modalButtons" class="space-y-3 text-center">
@@ -201,38 +339,77 @@
                 </div>
 
                 <div id="successActions" class="hidden space-y-4 pt-2">
-                    <div class="bg-emerald-50 text-emerald-700 p-4 rounded-xl text-center font-bold text-xs">
+                    <div class="bg-emerald-50 text-emerald-700 p-4 rounded-xl text-center font-bold text-xs border border-emerald-100">
                         <i class="fas fa-check-circle text-lg mb-1 block"></i> REGISTRO SALVO COM SUCESSO!
                     </div>
                     <div class="grid grid-cols-1 gap-3">
-                        <button onclick="sendWhatsapp()" class="w-full bg-[#25D366] text-white font-bold py-3 rounded-xl uppercase text-xs flex items-center justify-center gap-2 shadow-md">
+                        <button onclick="sendWhatsapp()" class="w-full bg-[#25D366] text-white font-bold py-3 rounded-xl uppercase text-xs flex items-center justify-center gap-2 shadow-md hover:bg-[#20bd5a] transition-colors">
                             <i class="fab fa-whatsapp text-lg"></i> Compartilhar no WhatsApp
                         </button>
-                        <button onclick="closeModal('confirmModal'); resetForm();" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl uppercase text-xs shadow-md">
-                             Próximo Bloco
+                        <button onclick="closeModal('confirmModal'); resetForm();" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl uppercase text-xs shadow-md hover:bg-slate-900 transition-colors">
+                             Adicionar Novo Bloco
                         </button>
                     </div>
                 </div>
 
                 <div id="modalLoading" class="hidden text-center py-4">
                     <div class="loading-spinner mr-2"></div>
-                    <span class="text-xs font-bold text-slate-500 uppercase">Sincronizando...</span>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Sincronizando na Nuvem...</span>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modal de Confirmação de Exclusão Customizado -->
+    <div id="deleteModal" class="fixed inset-0 z-50 modal-overlay hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 text-center space-y-4 card-shadow">
+            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+            <div>
+                <h4 class="font-black text-slate-800 uppercase text-base">Excluir Registro?</h4>
+                <p class="text-xs text-slate-500 mt-1">Esta ação removerá o item da lista local.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="closeModal('deleteModal')" class="bg-slate-100 text-slate-600 font-bold py-3 rounded-xl uppercase text-xs hover:bg-slate-200">Cancelar</button>
+                <button id="btnConfirmDelete" class="bg-red-600 text-white font-bold py-3 rounded-xl uppercase text-xs shadow-md hover:bg-red-700">Excluir</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // URL Atualizada do App Script
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwg-4LS7Hm6ejhX3HXDi1Th_4xsGulsm87xY2Kukon6a4eKLqmIyevu6NjtGaTmc_iM3Q/exec";
         
         let registros = JSON.parse(localStorage.getItem('oasis_records')) || [];
         let currentRecord = null;
+        let deleteTargetId = null;
 
         window.onload = () => {
             document.getElementById('formData').valueAsDate = new Date();
             render();
         };
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const bgColor = type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-emerald-600' : 'bg-slate-800';
+            const icon = type === 'error' ? 'fa-exclamation-circle' : type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+            
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-xs font-bold uppercase tracking-wide transition-all transform translate-y-2 opacity-0 pointer-events-auto`;
+            toast.innerHTML = `<i class="fas ${icon} text-base"></i><span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
 
         function toggleOthers(selectId, inputId) {
             const select = document.getElementById(selectId);
@@ -291,6 +468,7 @@
                 bloco: bloco,
                 equip: equip,
                 total: total,
+                totalMinutos: m_min + t_min,
                 m: mi && mf ? `${mi} às ${mf}` : "Não trabalhou",
                 t: ti && tf ? `${ti} às ${tf}` : "Não trabalhou",
                 m_inicio: mi,
@@ -308,19 +486,19 @@
             };
 
             document.getElementById('confirmDataText').innerHTML = `
-                <div class="flex justify-between border-b pb-1 uppercase"><b class="text-slate-400">DATA:</b> <span class="font-bold">${data.data}</span></div>
-                <div class="flex justify-between border-b pb-1 uppercase"><b class="text-slate-400">OPERADOR:</b> <span class="font-bold text-emerald-700">${data.operador}</span></div>
-                <div class="flex justify-between border-b pb-1 uppercase"><b class="text-slate-400">LOCAL:</b> <span class="font-bold">${data.bloco}</span></div>
-                <div class="flex justify-between border-b pb-1 uppercase"><b class="text-slate-400">EQUIP:</b> <span class="font-bold">${data.equip}</span></div>
-                <div class="pt-2">
-                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Turnos</p>
+                <div class="flex justify-between items-center border-b pb-2 uppercase"><b class="text-slate-400">DATA:</b> <span class="font-bold bg-slate-200 px-2 py-1 rounded">${data.data}</span></div>
+                <div class="flex justify-between items-center border-b py-2 uppercase"><b class="text-slate-400">OPERADOR:</b> <span class="font-bold text-emerald-700">${data.operador}</span></div>
+                <div class="flex justify-between items-center border-b py-2 uppercase"><b class="text-slate-400">LOCAL:</b> <span class="font-bold text-center">${data.bloco}</span></div>
+                <div class="flex justify-between items-center border-b py-2 uppercase"><b class="text-slate-400">EQUIP:</b> <span class="font-bold text-center">${data.equip}</span></div>
+                <div class="pt-3 text-center">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Turnos Trabalhados</p>
                     <div class="grid grid-cols-2 gap-2 text-[11px]">
-                        <div class="bg-emerald-50 p-2 rounded-lg"><b>MANHÃ:</b><br>${data.m}</div>
-                        <div class="bg-amber-50 p-2 rounded-lg"><b>TARDE:</b><br>${data.t}</div>
+                        <div class="bg-emerald-50 p-2 rounded-lg flex flex-col items-center justify-center"><b>MANHÃ</b><span>${data.m}</span></div>
+                        <div class="bg-amber-50 p-2 rounded-lg flex flex-col items-center justify-center"><b>TARDE</b><span>${data.t}</span></div>
                     </div>
                 </div>
-                <div class="text-center pt-2">
-                    <p class="text-sm font-black text-emerald-600 uppercase">Tempo Total: ${data.total}h</p>
+                <div class="text-center pt-3 mt-2 border-t border-slate-200">
+                    <p class="text-base font-black text-emerald-600 uppercase tracking-wider">Tempo Total: ${data.total}h</p>
                 </div>
             `;
             
@@ -338,7 +516,6 @@
 
             const editId = document.getElementById('editId').value;
 
-            // Definindo o período baseado nos horários preenchidos
             let periodoTexto = "Não informado";
             if (currentRecord.m !== "Não trabalhou" && currentRecord.t !== "Não trabalhou") {
                 periodoTexto = "Integral";
@@ -360,7 +537,6 @@
             formData.append("Total minutos Tarde", currentRecord.t_min);
 
             try {
-                // Tenta enviar para o Google Sheets
                 await fetch(WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -368,7 +544,6 @@
                     body: formData.toString()
                 });
 
-                // Atualiza o armazenamento local (Offline/Cache)
                 if (editId) {
                     const index = registros.findIndex(r => r.id == editId);
                     registros[index] = { ...currentRecord, id: Number(editId) };
@@ -382,9 +557,10 @@
                 document.getElementById('modalLoading').classList.add('hidden');
                 document.getElementById('successActions').classList.remove('hidden');
                 render();
+                showToast("Registro salvo e sincronizado!", "success");
             } catch (e) {
                 console.error(e);
-                alert("Erro ao enviar para a nuvem. O registro ficará salvo apenas no seu celular temporariamente.");
+                showToast("Salvo localmente (erro na nuvem)", "error");
                 document.getElementById('modalButtons').classList.remove('hidden');
                 document.getElementById('modalLoading').classList.add('hidden');
             }
@@ -409,87 +585,161 @@
         function render() {
             const list = document.getElementById('cardsList');
             if (registros.length === 0) {
-                list.innerHTML = `<div class="text-center py-10 text-slate-300 font-bold uppercase text-[10px] border-2 border-dashed rounded-3xl border-slate-200">Sem registros recentes</div>`;
+                list.innerHTML = `<div class="text-center py-12 text-slate-300 font-bold uppercase text-[11px] border-2 border-dashed rounded-3xl border-slate-200">Nenhum registro lançado hoje.</div>`;
                 return;
             }
 
             const sortedList = getSortedRegistros();
 
             list.innerHTML = sortedList.map(r => `
-                <div id="card-${r.id}" class="bg-white p-6 rounded-3xl border border-slate-100 card-shadow relative group overflow-hidden">
-                    <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <div id="card-${r.id}" class="bg-white p-6 rounded-3xl border border-slate-100 card-shadow relative group overflow-hidden transition-all flex flex-col">
+                    <div class="absolute top-4 right-4 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10">
                         <button onclick="editRecord(${r.id})" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteRecord(${r.id})" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Excluir">
+                        <button onclick="promptDeleteRecord(${r.id})" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Excluir">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                     
-                    <div class="flex justify-between items-start mb-4 pr-24">
-                        <div>
-                            <span class="bg-slate-100 text-slate-500 text-[10px] font-black px-2 py-1 rounded-md uppercase">${r.data}</span>
-                            <h4 class="font-black text-slate-800 text-lg uppercase mt-1 tracking-tight">${r.operador}</h4>
+                    <div class="flex flex-col sm:flex-row justify-between items-center sm:items-start text-center sm:text-left mb-5 gap-3 pr-0 sm:pr-24">
+                        <div class="flex flex-col items-center sm:items-start">
+                            <span class="bg-slate-100 text-slate-500 text-[10px] font-black px-3 py-1 rounded-md uppercase mb-1">${r.data}</span>
+                            <h4 class="font-black text-slate-800 text-lg uppercase tracking-tight">${r.operador}</h4>
                         </div>
-                        <div class="text-right">
-                             <span class="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md uppercase">${r.bloco}</span>
-                             <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase">${r.equip}</p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 text-[11px] border-t border-slate-50 pt-4">
-                        <div>
-                            <p class="text-slate-400 font-black text-[9px] uppercase tracking-tighter">Manhã</p>
-                            <p class="font-bold text-slate-700">${r.m}</p>
-                        </div>
-                        <div>
-                            <p class="text-slate-400 font-black text-[9px] uppercase tracking-tighter">Tarde</p>
-                            <p class="font-bold text-slate-700">${r.t}</p>
+                        <div class="flex flex-col items-center sm:items-end">
+                             <span class="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-md uppercase text-center">${r.bloco}</span>
+                             <p class="text-[11px] font-bold text-slate-400 mt-2 uppercase text-center">${r.equip}</p>
                         </div>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-emerald-100 flex justify-between items-center">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tempo</span>
-                        <span class="text-xl font-black text-emerald-600">${r.total}h</span>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-[11px] border-t border-slate-50 pt-5 mt-auto">
+                        <div class="flex flex-col items-center justify-center">
+                            <p class="text-slate-400 font-black text-[9px] uppercase tracking-tighter mb-1.5">Manhã</p>
+                            <p class="font-bold text-slate-700 bg-slate-50 px-3 py-1.5 rounded-md text-center w-full">${r.m}</p>
+                        </div>
+                        <div class="flex flex-col items-center justify-center">
+                            <p class="text-slate-400 font-black text-[9px] uppercase tracking-tighter mb-1.5">Tarde</p>
+                            <p class="font-bold text-slate-700 bg-slate-50 px-3 py-1.5 rounded-md text-center w-full">${r.t}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-5 pt-4 border-t border-emerald-50 flex justify-between items-center">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tempo Total</span>
+                        <span class="text-xl font-black text-emerald-600 bg-emerald-50 px-4 py-1.5 rounded-xl">${r.total}h</span>
                     </div>
                 </div>
             `).join('');
         }
 
-        async function downloadAllAsJPEG() {
-            if (registros.length === 0) return alert("Não há registros para exportar.");
-            
-            const captureList = document.getElementById('captureList');
-            const captureDateText = document.getElementById('captureDate');
-            captureList.innerHTML = ''; 
-            
-            captureDateText.innerText = `Referente a: ${registros[0].data}`;
+        async function downloadReportJPEG() {
+            if (registros.length === 0) {
+                showToast("Nenhum registro para gerar o relatório.", "error");
+                return;
+            }
 
-            const sortedList = getSortedRegistros();
-
-            sortedList.forEach(r => {
-                const card = document.getElementById(`card-${r.id}`).cloneNode(true);
-                const btns = card.querySelector('.z-10');
-                if (btns) btns.remove();
-                card.classList.remove('card-shadow', 'group');
-                card.classList.add('border-slate-200');
-                captureList.appendChild(card);
-            });
-
-            const container = document.getElementById('captureContainer');
+            const btn = document.getElementById('btnDownloadReport');
+            const originalBtnText = btn.innerHTML;
             
             try {
-                const canvas = await html2canvas(container, { 
-                    scale: 2, 
-                    useCORS: true,
-                    backgroundColor: '#f8fafc'
-                });
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Gerando Relatório...`;
+                btn.disabled = true;
+
+                const sortedList = getSortedRegistros();
                 
+                // Atualizar dados de cabeçalho e KPIs no relatório
+                const rptDate = sortedList[0]?.data || new Date().toLocaleDateString('pt-BR');
+                document.getElementById('rptDateBadge').innerText = rptDate;
+                
+                const uniqueOperators = new Set(sortedList.map(r => r.operador.trim().toUpperCase())).size;
+                const uniqueLocations = new Set(sortedList.map(r => r.bloco.trim().toUpperCase())).size;
+                const totalMinutesSum = sortedList.reduce((acc, r) => acc + (r.totalMinutos || (r.m_min + r.t_min) || 0), 0);
+                
+                document.getElementById('kpiCount').innerText = sortedList.length;
+                document.getElementById('kpiOperators').innerText = uniqueOperators;
+                document.getElementById('kpiLocations').innerText = uniqueLocations;
+                document.getElementById('kpiTotalHours').innerText = `${formatTimeFromMin(totalMinutesSum)}h`;
+
+                const now = new Date();
+                document.getElementById('rptTimestamp').innerText = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+
+                // Preencher linhas do relatório com visualização de tabela estruturada
+                const rowsContainer = document.getElementById('reportRowsList');
+                rowsContainer.innerHTML = sortedList.map((r, index) => `
+                    <div class="p-4 flex flex-col gap-3 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'}">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-slate-800 text-white text-[10px] font-black flex items-center justify-center">${index + 1}</span>
+                                <span class="font-black text-slate-800 text-sm uppercase">${r.operador}</span>
+                            </div>
+                            <span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-3 py-1 rounded-md uppercase tracking-wide border border-emerald-200">${r.bloco}</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-2 text-[11px] items-center">
+                            <div class="bg-slate-100/80 p-2 rounded-lg text-center">
+                                <span class="text-[8px] font-black text-slate-400 uppercase block mb-0.5">EQUIPAMENTO</span>
+                                <span class="font-extrabold text-slate-700 text-[10px] uppercase">${r.equip}</span>
+                            </div>
+                            <div class="bg-slate-100/80 p-2 rounded-lg text-center">
+                                <span class="text-[8px] font-black text-slate-400 uppercase block mb-0.5">MANHÃ / TARDE</span>
+                                <span class="font-bold text-slate-700 text-[10px]">${r.m !== 'Não trabalhou' ? r.m : '-'} | ${r.t !== 'Não trabalhou' ? r.t : '-'}</span>
+                            </div>
+                            <div class="bg-emerald-50 border border-emerald-200 p-2 rounded-lg text-center">
+                                <span class="text-[8px] font-black text-emerald-600 uppercase block mb-0.5">TOTAL HORAS</span>
+                                <span class="font-black text-emerald-800 text-xs">${r.total}h</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                const reportNode = document.getElementById('reportExportContainer');
+                
+                // CORREÇÃO PARA CELULAR (TELA BRANCA):
+                // 1. Trazemos o formulário para a tela (embaixo do layout, invisível para o usuário)
+                // Isso força o navegador a renderizar as cores e os textos.
+                reportNode.style.left = '0px';
+                reportNode.style.top = '0px';
+                reportNode.style.zIndex = '-9999';
+                reportNode.style.position = 'fixed';
+                
+                // 2. Aumentamos o tempo de espera para garantir que fontes e imagens carregaram
+                await new Promise(resolve => setTimeout(resolve, 600));
+
+                // 3. Ajustamos a proporção de pixels (pixelRatio) para 2 (boa qualidade sem exceder a memória do iOS/Android)
+                const dataUrl = await htmlToImage.toJpeg(reportNode, {
+                    quality: 0.95,
+                    pixelRatio: 2, 
+                    backgroundColor: '#f1f5f9',
+                    cacheBust: true,
+                    style: {
+                        transform: 'scale(1)',
+                        transformOrigin: 'top left'
+                    }
+                });
+
+                // Devolvemos o quadro para a área oculta
+                reportNode.style.position = 'absolute';
+                reportNode.style.left = '-9999px';
+
                 const link = document.createElement('a');
-                link.download = `RELATORIO_OASIS_${new Date().toLocaleDateString().replace(/\//g, '-')}.jpg`;
-                link.href = canvas.toDataURL("image/jpeg", 0.9);
+                const cleanDate = rptDate.replace(/\//g, '-');
+                link.download = `RELATORIO_OASIS_${cleanDate}.jpg`;
+                link.href = dataUrl;
                 link.click();
-            } catch (e) {
-                console.error(e);
-                alert("Erro ao gerar imagem.");
+
+                showToast("Relatório JPEG baixado com sucesso!", "success");
+
+            } catch (err) {
+                console.error(err);
+                showToast("Erro ao gerar arquivo de imagem.", "error");
+            } finally {
+                // Segurança extra para sempre esconder o quadro se houver falha
+                const reportNode = document.getElementById('reportExportContainer');
+                reportNode.style.position = 'absolute';
+                reportNode.style.left = '-9999px';
+
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
             }
         }
 
@@ -523,12 +773,16 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function deleteRecord(id) {
-            if (confirm("Excluir do histórico local?")) {
-                registros = registros.filter(r => r.id != id);
+        function promptDeleteRecord(id) {
+            deleteTargetId = id;
+            document.getElementById('btnConfirmDelete').onclick = () => {
+                registros = registros.filter(r => r.id != deleteTargetId);
                 localStorage.setItem('oasis_records', JSON.stringify(registros));
                 render();
-            }
+                closeModal('deleteModal');
+                showToast("Registro excluído com sucesso", "info");
+            };
+            document.getElementById('deleteModal').classList.remove('hidden');
         }
 
         function sendWhatsapp() {
@@ -539,7 +793,7 @@
                          `⚙️ *Equipamento:* ${currentRecord.equip}\n\n` +
                          `🌅 *Manhã:* ${currentRecord.m}\n` +
                          `🌇 *Tarde:* ${currentRecord.t}\n\n` +
-                         `⏳ *TOTAL:* ${currentRecord.total}h\n\n` +
+                         `⏳ *TOTAL HORAS:* ${currentRecord.total}h\n\n` +
                          `_Sistema de Gestão SPG Oásis_`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
         }
@@ -557,6 +811,10 @@
         }
 
         function exportExcel() {
+            if (registros.length === 0) {
+                showToast("Nenhum dado para exportar.", "error");
+                return;
+            }
             const sortedList = getSortedRegistros();
             const excelData = sortedList.map(r => ({
                 Data: r.data, Operador: r.operador, Local: r.bloco, Equipamento: r.equip,
@@ -566,6 +824,7 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Histórico");
             XLSX.writeFile(wb, "Relatorio_Oasis_Ordenado.xlsx");
+            showToast("Planilha Excel baixada com sucesso!", "success");
         }
     </script>
 </body>
