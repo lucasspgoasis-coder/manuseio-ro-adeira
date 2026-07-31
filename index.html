@@ -672,7 +672,8 @@
                                 <span class="w-6 h-6 rounded-full bg-slate-800 text-white text-[10px] font-black flex items-center justify-center">${index + 1}</span>
                                 <span class="font-black text-slate-800 text-sm uppercase">${r.operador}</span>
                             </div>
-                            <span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-3 py-1 rounded-md uppercase tracking-wide border border-emerald-200">${r.bloco}</span>
+                            <!-- A classe whitespace-nowrap impede que o nome do bloco quebre para a linha de baixo -->
+                            <span class="whitespace-nowrap bg-emerald-100 text-emerald-800 text-[10px] font-black px-3 py-1 rounded-md uppercase tracking-wide border border-emerald-200">${r.bloco}</span>
                         </div>
                         
                         <div class="grid grid-cols-3 gap-2 text-[11px] items-center">
